@@ -1,0 +1,54 @@
+language: rust
+
+matrix:
+  fast_finish: true
+  include:
+    - name: stable async
+      rust: stable
+      script:
+        - cargo fmt --all -- --check
+        - cargo build --all
+        - cargo test --all
+    - name: stable sync
+      rust: stable
+      env: RUSTFLAGS='--cfg is_sync'
+      script:
+        - cargo fmt --all -- --check
+        - cargo build --all
+        - cargo test --all
+    - name: beta async
+      rust: beta
+      script:
+        - cargo build --all
+        - cargo test --all
+    - name: beta sync
+      rust: beta
+      env: RUSTFLAGS='--cfg is_sync'
+      script:
+        - cargo build --all
+        - cargo test --all
+    - name: nightly async
+      rust: nightly
+      script:
+        - cargo build --all
+        - cargo test --all
+    - name: nightly sync
+      rust: nightly
+      env: RUSTFLAGS='--cfg is_sync'
+      script:
+        - cargo build --all
+        - cargo test --all
+    - name: cargo doc sync
+      rust: stable
+      script:
+        - RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps --all-features
+    - name: cargo doc async
+      rust: stable
+      script:
+        - RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps
+
+cache: cargo
+
+notifications:
+  email:
+    on_success: change
