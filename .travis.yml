@@ -5,12 +5,16 @@ matrix:
   include:
     - name: stable async
       rust: stable
+      before_script:
+        - rustup component add rustfmt
       script:
         - cargo fmt --all -- --check
         - cargo build --all
         - cargo test --all
     - name: stable sync
       rust: stable
+      before_script:
+        - rustup component add rustfmt
       env: RUSTFLAGS='--cfg is_sync'
       script:
         - cargo fmt --all -- --check
