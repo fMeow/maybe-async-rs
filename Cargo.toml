@@ -8,8 +8,7 @@ readme = "README.org"
 [dependencies]
 proc-macro2 = "1.0"
 quote = "1.0"
-syn = { version = "1.0", features = ["full", "visit-mut"] }
-async-trait = "0.1"
+syn = { version = "1.0", features = ["visit-mut"] }
 
 [lib]
 proc-macro = true
@@ -18,8 +17,8 @@ proc-macro = true
 travis-ci = { repository = "guoli-lyu/maybe-async" }
 
 [dev-dependencies]
-rustversion = "1.0"
 trybuild = { version = "1.0.19", features = ["diff"] }
+async-trait = "0.1"
 
 [features]
 default = []
