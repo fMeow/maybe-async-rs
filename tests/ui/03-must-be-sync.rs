@@ -39,7 +39,7 @@ impl Trait for Struct {
     async fn declare_async(&self) {}
 
     async fn async_fn(&self) {
-        self.declare_async().await
+        async{ self.declare_async().await}.await
     }
 }
 fn main()->std::result::Result<(),()>{

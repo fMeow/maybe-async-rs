@@ -12,24 +12,32 @@
 //! ## Examples
 //!
 //! ```rust
+//! # use maybe_async::maybe_async;
 //! #[maybe_async]
 //! trait A {
-//!     async fn async_fn_name() -> Result<(), ()> {}
-//!     fn sync_fn_name() -> Result<(), ()> {}
+//!     async fn async_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
+//!     fn sync_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
 //! }
 //!
 //! struct Foo;
 //!
 //! #[maybe_async]
 //! impl A for Foo {
-//!     async fn async_fn_name() -> Result<(), ()> {}
-//!     fn sync_fn_name() -> Result<(), ()> {}
+//!     async fn async_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
+//!     fn sync_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
 //! }
 //!
 //! #[maybe_async]
 //! async fn maybe_async_fn() -> Result<(), ()> {
-//!     #[maybe_async(async_fn_name)]
-//!     let a = Foo::async_fn_name()?;
+//!     let a = Foo::async_fn_name().await?;
 //!
 //!     let b = Foo::sync_fn_name()?;
 //!     Ok(())
@@ -40,18 +48,27 @@
 //! is async code:
 //!
 //! ```rust
+//! # use async_trait::async_trait;
 //! #[async_trait]
 //! trait A {
-//!     async fn maybe_async_fn_name() -> Result<(), ()> {}
-//!     fn sync_fn_name() -> Result<(), ()> {}
+//!     async fn maybe_async_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
+//!     fn sync_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
 //! }
 //!
 //! struct Foo;
 //!
 //! #[async_trait]
 //! impl A for Foo {
-//!     async fn maybe_async_fn_name() -> Result<(), ()> {}
-//!     fn sync_fn_name() -> Result<(), ()> {}
+//!     async fn maybe_async_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
+//!     fn sync_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
 //! }
 //!
 //! async fn maybe_async_fn() -> Result<(), ()> {
@@ -66,15 +83,23 @@
 //!
 //! ```rust
 //! trait A {
-//!     fn maybe_async_fn_name() -> Result<(), ()> {}
-//!     fn sync_fn_name() -> Result<(), ()> {}
+//!     fn maybe_async_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
+//!     fn sync_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
 //! }
 //!
 //! struct Foo;
 //!
 //! impl A for Foo {
-//!     fn maybe_async_fn_name() -> Result<(), ()> {}
-//!     fn sync_fn_name() -> Result<(), ()> {}
+//!     fn maybe_async_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
+//!     fn sync_fn_name() -> Result<(), ()> {
+//!         Ok(())
+//!     }
 //! }
 //!
 //! fn maybe_async_fn() -> Result<(), ()> {
