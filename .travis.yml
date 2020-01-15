@@ -5,6 +5,8 @@ matrix:
   include:
     - name: stable
       rust: stable
+      env:
+        - TRAVIS_DEPLOY_JOB=1
       before_script:
         - rustup component add rustfmt
       script:
@@ -44,4 +46,4 @@ deploy:
   on:
     tags: true
     branch: master
-    condition: "$TRAVIS_RUST_VERSION = stable"
+    condition: "$TRAVIS_DEPLOY_JOB = 1"
