@@ -39,14 +39,16 @@
 //!
 //!     `maybe_async` adopts async first policy.
 //!
-//!     Add `maybe_async` in dependencies with default features means `maybe_async` is the same as `must_be_async`:
+//!     Add `maybe_async` in dependencies with default features means
+//! `maybe_async` is the same as `must_be_async`:
 //!
 //!     ```toml
 //!     [dependencies]
 //!     maybe_async = "0.1"
 //!     ```
 //!
-//!     When specify a `is_sync` feature gate, `maybe_async` is the same as `must_be_sync`:
+//!     When specify a `is_sync` feature gate, `maybe_async` is the same as
+//! `must_be_sync`:
 //!
 //!     ```toml
 //!     [dependencies]
@@ -223,18 +225,24 @@ pub fn maybe_async(_args: TokenStream, input: TokenStream) -> TokenStream {
     token.into()
 }
 
+/// convert marked async code to async code with `async-trait`
 #[proc_macro_attribute]
 pub fn must_be_async(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = parse_macro_input!(input as Item);
     convert_async(&mut item).into()
 }
 
+/// convert marked async code to sync code
 #[proc_macro_attribute]
 pub fn must_be_sync(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = parse_macro_input!(input as Item);
     convert_sync(&mut item).into()
 }
 
+/// mark sync implementation
+///
+/// only compiled when `is_sync` feature gate is set.
+/// When `is_sync` is not set, marked code is removed.
 #[proc_macro_attribute]
 pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = TokenStream2::from(input);
@@ -246,6 +254,10 @@ pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
     token.into()
 }
 
+/// mark async implementation
+///
+/// only compiled when `is_sync` feature gate is not set.
+/// When `is_sync` is set, marked code is removed.
 #[proc_macro_attribute]
 pub fn async_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = TokenStream2::from(input);
