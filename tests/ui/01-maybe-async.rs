@@ -39,7 +39,7 @@ impl Trait for Struct {
     async fn declare_async(&self) {}
 
     async fn async_fn(&self) {
-        async{ self.declare_async().await}.await
+        async { self.declare_async().await }.await
     }
 }
 

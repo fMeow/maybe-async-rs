@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use maybe_async::{must_be_sync};
+use maybe_async::must_be_sync;
 
 #[must_be_sync]
 trait Trait {
@@ -39,10 +39,10 @@ impl Trait for Struct {
     async fn declare_async(&self) {}
 
     async fn async_fn(&self) {
-        async{ self.declare_async().await}.await
+        async { self.declare_async().await }.await
     }
 }
-fn main()->std::result::Result<(),()>{
+fn main() -> std::result::Result<(), ()> {
     let s = Struct;
     s.declare_async();
     s.async_fn();
