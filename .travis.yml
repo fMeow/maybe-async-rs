@@ -3,7 +3,7 @@ language: rust
 matrix:
   fast_finish: true
   include:
-    - name: stable async
+    - name: stable
       rust: stable
       before_script:
         - rustup component add rustfmt
@@ -11,47 +11,27 @@ matrix:
         - cargo fmt --all -- --check
         - cargo build --all
         - cargo test --all
-    - name: stable sync
-      rust: stable
-      before_script:
-        - rustup component add rustfmt
-      env: RUSTFLAGS='--cfg is_sync'
-      script:
-        - cargo fmt --all -- --check
-        - cargo build --all
-        - cargo test --all
-    - name: beta async
+        - RUSTFLAGS='--cfg is_sync' cargo build --all
+        - RUSTFLAGS='--cfg is_sync' cargo test --all
+    - name: beta
       rust: beta
       script:
         - cargo build --all
         - cargo test --all
-    - name: beta sync
-      rust: beta
-      env: RUSTFLAGS='--cfg is_sync'
-      script:
-        - cargo build --all
-        - cargo test --all
-    - name: nightly async
+        - RUSTFLAGS='--cfg is_sync' cargo build --all
+        - RUSTFLAGS='--cfg is_sync' cargo test --all
+    - name: nightly
       rust: nightly
       script:
         - cargo build --all
         - cargo test --all
-    - name: nightly sync
-      rust: nightly
-      env: RUSTFLAGS='--cfg is_sync'
-      script:
-        - cargo build --all
-        - cargo test --all
+        - RUSTFLAGS='--cfg is_sync' cargo build --all
+        - RUSTFLAGS='--cfg is_sync' cargo test --all
     - name: cargo doc sync
       rust: stable
       script:
-        - RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps --all-features
-    - name: cargo doc async
-      rust: stable
-      script:
         - RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps
-
-cache: cargo
+        - RUSTFLAGS='--cfg is_sync' RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps
 
 notifications:
   email:
