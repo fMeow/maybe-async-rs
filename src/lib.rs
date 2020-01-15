@@ -35,6 +35,22 @@
 //!     offers a unified feature gate to provide sync and async conversion on
 //! demand by feature gate `is_sync`.
 //!
+//!     `maybe_async` adopts async first policy.
+//!
+//!     Add `maybe_async` in dependencies with default features means `maybe_async` is the same as `must_be_async`:
+//!
+//!     ```toml
+//!     [dependencies]
+//!     maybe_async = "0.1"
+//!     ```
+//!
+//!     When specify a `is_sync` feature gate, `maybe_async` is the same as `must_be_sync`:
+//!
+//!     ```toml
+//!     [dependencies]
+//!     maybe_async = { version = "0.1", features = ["is_sync"] }
+//!     ```
+//!
 //! ## Motivation
 //!
 //!
