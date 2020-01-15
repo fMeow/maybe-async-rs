@@ -2,12 +2,45 @@
 //! # Maybe-Async Procedure Macro
 //!
 //! [![Build Status](https://travis-ci.com/guoli-lyu/maybe-async-rs.svg?token=WSHqSm6F65Fza985QMqn&branch=master)](https://travis-ci.com/guoli-lyu/maybe-async-rs)
+//! [![Latest Version](https://img.shields.io/crates/v/maybe-async.svg)](https://crates.io/crates/maybe-async)
 //!
-//! Unifying async and sync library implementation.
+//! When implementing both sync and async versions of API in a crate, most API
+//! of the two version are almost the same except for some async/await keyword.
 //!
-//! Users write async code with normal `async`, `await`, but `maybe_async`
-//! delete those `async` and `await`.
+//! `maybe-async` help unifying async and sync implementation.
+//! Write async code with normal `async`, `await`, and let `maybe_async` handles
+//! those `async` and `await` when you need a synchronized code. Switch between
+//! sync and async by toggling `is_sync` feature gate.
 //!
+//! ## Key features
+//!
+//! `maybe-async` offers three attribute macros: `maybe_async`, `must_be_sync`
+//! and `must_be_async`.
+//!
+//! These macros can be applied to trait item, trait impl, function and struct
+//! impl.
+//!
+//! - `must_be_async`
+//!
+//!     add `async_trait` attribute macro for trait declaration or
+//! implementation to bring async fn support in traits
+//!
+//! - `must_be_sync`
+//!
+//!     convert the async code into sync code by removing all `async move`,
+//! `async` and `await` keyword
+//!
+//! - `maybe_async`
+//!
+//!     offers a unified feature gate to provide sync and async conversion on
+//! demand by feature gate `is_sync`.
+//!
+//! ## Motivation
+//!
+//!
+//! The async/await language feature alters the async world of rust.
+//! Comparing with the map/and_then style, now the async code really resembles
+//! sync version code.
 //!
 //! ## Examples
 //!
@@ -108,18 +141,6 @@
 //!     Ok(())
 //! }
 //! ```
-//!
-//! ## Idea
-//!
-//! Can be applied to trait item, trait impl, function and struct impl.
-//!
-//! - Async
-//!
-//!     if trait declaration or implementation, just add `async_trait` attribute
-//!
-//! - Sync
-//!
-//!     remove all `async` and `await` keyword
 
 extern crate proc_macro;
 
