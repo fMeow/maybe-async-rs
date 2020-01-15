@@ -1,11 +1,20 @@
+use proc_macro2::TokenStream;
+use quote::quote;
 use syn::{
     parse_quote, token,
     visit_mut::{self, VisitMut},
-    Expr, ExprBlock, ExprParen,
+    Expr, ExprBlock, ExprParen, File,
 };
 
 pub struct AsyncAwaitRemoval;
 
+impl AsyncAwaitRemoval {
+    pub fn remove_async_await(&mut self, item: TokenStream) -> TokenStream {
+        let mut syntax_tree: File = syn::parse(item.into()).unwrap();
+        self.visit_file_mut(&mut syntax_tree);
+        quote!(#syntax_tree)
+    }
+}
 impl VisitMut for AsyncAwaitRemoval {
     fn visit_expr_mut(&mut self, node: &mut Expr) {
         match node {

@@ -147,7 +147,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{parse_macro_input, visit_mut::VisitMut, File, ImplItem, TraitItem};
+use syn::{parse_macro_input, ImplItem, TraitItem};
 
 mod parse;
 mod visit;
@@ -168,30 +168,24 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
         Item::Impl(item) => {
             for inner in &mut item.items {
                 if let ImplItem::Method(ref mut method) = inner {
-                    let sig = &mut method.sig;
-                    if sig.asyncness.is_some() {
-                        sig.asyncness = None;
+                    if method.sig.asyncness.is_some() {
+                        method.sig.asyncness = None;
                     }
                 }
             }
-            let mut syntax_tree: File = syn::parse(quote!(#item).into()).unwrap();
-            AsyncAwaitRemoval.visit_file_mut(&mut syntax_tree);
-            quote!(#syntax_tree)
+            AsyncAwaitRemoval.remove_async_await(quote!(#item))
         }
         Item::Trait(item) => {
             for inner in &mut item.items {
                 if let TraitItem::Method(ref mut method) = inner {
-                    let sig = &mut method.sig;
-                    if sig.asyncness.is_some() {
-                        sig.asyncness = None;
+                    if method.sig.asyncness.is_some() {
+                        method.sig.asyncness = None;
                     }
                 }
             }
-            let mut syntax_tree: File = syn::parse(quote!(#item).into()).unwrap();
-            AsyncAwaitRemoval.visit_file_mut(&mut syntax_tree);
-            quote!(#syntax_tree)
+            AsyncAwaitRemoval.remove_async_await(quote!(#item))
         }
-        Item::Fn(item) => quote!(#item),
+        Item::Fn(item) => AsyncAwaitRemoval.remove_async_await(quote!(#item)),
     }
     .into()
 }
