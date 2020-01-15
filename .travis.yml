@@ -13,27 +13,27 @@ matrix:
         - cargo fmt --all -- --check
         - cargo build --all
         - cargo test --all
-        - RUSTFLAGS='--cfg is_sync' cargo build --all
-        - RUSTFLAGS='--cfg is_sync' cargo test --all
+        - cargo build --all --features=is_sync
+        - cargo test --all --features=is_sync
     - name: beta
       rust: beta
       script:
         - cargo build --all
         - cargo test --all
-        - RUSTFLAGS='--cfg is_sync' cargo build --all
-        - RUSTFLAGS='--cfg is_sync' cargo test --all
+        - cargo build --all --features=is_sync
+        - cargo test --all --features=is_sync
     - name: nightly
       rust: nightly
       script:
         - cargo build --all
         - cargo test --all
-        - RUSTFLAGS='--cfg is_sync' cargo build --all
-        - RUSTFLAGS='--cfg is_sync' cargo test --all
+        - cargo build --all --features=is_sync
+        - cargo test --all --features=is_sync
     - name: cargo doc
       rust: stable
       script:
         - RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps
-        - RUSTFLAGS='--cfg is_sync' RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps
+        - RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps --features=is_sync
 
 notifications:
   email:
