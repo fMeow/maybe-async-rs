@@ -27,7 +27,7 @@ matrix:
         - cargo test --all
         - RUSTFLAGS='--cfg is_sync' cargo build --all
         - RUSTFLAGS='--cfg is_sync' cargo test --all
-    - name: cargo doc sync
+    - name: cargo doc
       rust: stable
       script:
         - RUSTDOCFLAGS=-Dwarnings cargo doc --all --no-deps
