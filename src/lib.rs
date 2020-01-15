@@ -13,8 +13,8 @@ use crate::visit::AsyncAwaitRemoval;
 
 fn convert_async(input: &mut Item) -> TokenStream2 {
     match input {
-        Item::Impl(item) => quote!(#[async_trait]#item),
-        Item::Trait(item) => quote!(#[async_trait]#item),
+        Item::Impl(item) => quote!(#[async_trait::async_trait]#item),
+        Item::Trait(item) => quote!(#[async_trait::async_trait]#item),
         Item::Fn(item) => quote!(#item),
     }
     .into()
