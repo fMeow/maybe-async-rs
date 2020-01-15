@@ -176,3 +176,25 @@ pub fn must_be_sync(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = parse_macro_input!(input as Item);
     convert_sync(&mut item).into()
 }
+
+#[proc_macro_attribute]
+pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input = TokenStream2::from(input);
+    let token = if cfg!(is_sync) {
+        quote!(#input)
+    } else {
+        quote!()
+    };
+    token.into()
+}
+
+#[proc_macro_attribute]
+pub fn async_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input = TokenStream2::from(input);
+    let token = if cfg!(is_sync) {
+        quote!()
+    } else {
+        quote!(#input)
+    };
+    token.into()
+}
