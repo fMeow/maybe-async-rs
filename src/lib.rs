@@ -168,13 +168,13 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
 use syn::{parse_macro_input, ImplItem, TraitItem};
+use quote::quote;
+
+use crate::{parse::Item, visit::AsyncAwaitRemoval};
 
 mod parse;
 mod visit;
-
-use crate::{parse::Item, visit::AsyncAwaitRemoval};
 
 fn convert_async(input: &mut Item) -> TokenStream2 {
     match input {
@@ -224,11 +224,11 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
 pub fn maybe_async(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = parse_macro_input!(input as Item);
 
-    let token = if cfg!(is_sync) {
-        convert_sync(&mut item)
-    } else {
-        convert_async(&mut item)
-    };
+    #[cfg(feature = "is_sync")]
+    let token = convert_sync(&mut item);
+    #[cfg(not(feature = "is_sync"))]
+    let token = convert_async(&mut item);
+
     token.into()
 }
 
@@ -251,13 +251,15 @@ pub fn must_be_sync(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// only compiled when `is_sync` feature gate is set.
 /// When `is_sync` is not set, marked code is removed.
 #[proc_macro_attribute]
-pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let input = TokenStream2::from(input);
-    let token = if cfg!(is_sync) {
+pub fn sync_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
+    #[cfg(not(feature = "is_sync"))]
+    let token = quote!();
+    #[cfg(feature = "is_sync")]
+    let token = {
+        let input = TokenStream2::from(_input);
         quote!(#input)
-    } else {
-        quote!()
     };
+
     token.into()
 }
 
@@ -266,12 +268,14 @@ pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// only compiled when `is_sync` feature gate is not set.
 /// When `is_sync` is set, marked code is removed.
 #[proc_macro_attribute]
-pub fn async_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let input = TokenStream2::from(input);
-    let token = if cfg!(is_sync) {
-        quote!()
-    } else {
+pub fn async_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
+    #[cfg(not(feature = "is_sync"))]
+    let token = {
+        let input = TokenStream2::from(_input);
         quote!(#input)
     };
+    #[cfg(feature = "is_sync")]
+    let token = quote!();
+
     token.into()
 }
