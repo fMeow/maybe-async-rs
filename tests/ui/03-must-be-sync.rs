@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use maybe_async::must_be_sync;
+use maybe_async::{maybe_async, must_be_sync};
 
-#[must_be_sync]
+#[maybe_async::maybe_async]
 trait Trait {
     fn sync_fn() {}
 
@@ -13,7 +13,7 @@ trait Trait {
     }
 }
 
-#[must_be_sync]
+#[maybe_async::maybe_async]
 pub trait PubTrait {
     fn sync_fn() {}
 
@@ -24,15 +24,16 @@ pub trait PubTrait {
     }
 }
 
-#[must_be_sync]
+#[maybe_async::maybe_async]
 async fn async_fn() {}
 
-#[must_be_sync]
+#[maybe_async::maybe_async]
 pub async fn pub_async_fn() {}
 
 struct Struct;
 
-#[must_be_sync]
+#[cfg(feature = "is_sync")]
+#[maybe_async::must_be_sync]
 impl Trait for Struct {
     fn sync_fn() {}
 
@@ -42,9 +43,18 @@ impl Trait for Struct {
         async { self.declare_async().await }.await
     }
 }
+
+#[cfg(feature = "is_sync")]
 fn main() -> std::result::Result<(), ()> {
     let s = Struct;
     s.declare_async();
     s.async_fn();
+    async_fn();
+    pub_async_fn();
     Ok(())
 }
+
+
+#[cfg(not(feature = "is_sync"))]
+#[async_std::main]
+async fn main() {}
