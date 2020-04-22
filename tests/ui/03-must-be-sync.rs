@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use maybe_async::{maybe_async, must_be_sync};
-
 #[maybe_async::maybe_async]
 trait Trait {
     fn sync_fn() {}
