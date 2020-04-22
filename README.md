@@ -5,7 +5,7 @@
 
 **Why bother writing similar code twice for blocking and async code?**
 
-[![Build Status](https://travis-ci.com/guoli-lyu/maybe-async-rs.svg?token=WSHqSm6F65Fza985QMqn&branch=master)](https://travis-ci.com/guoli-lyu/maybe-async-rs)
+[![Build Status](https://travis-ci.com/fMeow/maybe-async-rs.svg?token=WSHqSm6F65Fza985QMqn&branch=master)](https://travis-ci.com/fMeow/maybe-async-rs)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Latest Version](https://img.shields.io/crates/v/maybe-async.svg)](https://crates.io/crates/maybe-async)
 [![maybe-async](https://docs.rs/maybe-async/badge.svg)](https://docs.rs/maybe-async)
