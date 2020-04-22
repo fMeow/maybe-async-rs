@@ -3,7 +3,9 @@
 
 # Maybe-Async Procedure Macro
 
-[![Build Status](https://travis-ci.com/guoli-lyu/maybe-async-rs.svg?token=WSHqSm6F65Fza985QMqn&branch=master)](https://travis-ci.com/guoli-lyu/maybe-async-rs)
+**Why bother writing similar code twice, one for SYNC code and the other ASYNC code?**
+
+[![Build Status](https://travis-ci.com/fMeow/maybe-async-rs.svg?token=WSHqSm6F65Fza985QMqn&branch=master)](https://travis-ci.com/fMeow/maybe-async-rs)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Latest Version](https://img.shields.io/crates/v/maybe-async.svg)](https://crates.io/crates/maybe-async)
 [![maybe-async](https://docs.rs/maybe-async/badge.svg)](https://docs.rs/maybe-async)
@@ -41,14 +43,16 @@ demand by feature gate `is_sync`.
 
     `maybe_async` adopts async first policy.
 
-    Add `maybe_async` in dependencies with default features means `maybe_async` is the same as `must_be_async`:
+    Add `maybe_async` in dependencies with default features means
+`maybe_async` is the same as `must_be_async`:
 
     ```toml
     [dependencies]
     maybe_async = "0.1"
     ```
 
-    When specify a `is_sync` feature gate, `maybe_async` is the same as `must_be_sync`:
+    When specify a `is_sync` feature gate, `maybe_async` is the same as
+`must_be_sync`:
 
     ```toml
     [dependencies]
