@@ -207,7 +207,12 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
             }
             AsyncAwaitRemoval.remove_async_await(quote!(#item))
         }
-        Item::Fn(item) => AsyncAwaitRemoval.remove_async_await(quote!(#item)),
+        Item::Fn(item) => {
+            if item.sig.asyncness.is_some() {
+                item.sig.asyncness = None;
+            }
+            AsyncAwaitRemoval.remove_async_await(quote!(#item))
+        }
     }
     .into()
 }
