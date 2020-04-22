@@ -371,12 +371,12 @@ pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// only compiled when `is_sync` feature gate is not set.
 /// When `is_sync` is set, marked code is removed.
 #[proc_macro_attribute]
-pub fn async_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let input = TokenStream2::from(input);
+pub fn async_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
     let token = if cfg!(feature = "is_sync") {
         quote!()
     } else {
-        quote!(#input)
+        let mut item = parse_macro_input!(_input as Item);
+        convert_async(&mut item)
     };
     token.into()
 }
