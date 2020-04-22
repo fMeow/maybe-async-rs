@@ -167,9 +167,12 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
+
+use darling::FromMeta;
 use proc_macro2::TokenStream as TokenStream2;
+use syn::{parse_macro_input, AttributeArgs, ImplItem, TraitItem};
+
 use quote::quote;
-use syn::{parse_macro_input, ImplItem, TraitItem};
 
 use crate::{parse::Item, visit::AsyncAwaitRemoval};
 
@@ -224,11 +227,11 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
 pub fn maybe_async(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = parse_macro_input!(input as Item);
 
-    #[cfg(feature = "is_sync")]
-    let token = convert_sync(&mut item);
-    #[cfg(not(feature = "is_sync"))]
-    let token = convert_async(&mut item);
-
+    let token = if cfg!(feature = "is_sync") {
+        convert_sync(&mut item)
+    } else {
+        convert_async(&mut item)
+    };
     token.into()
 }
 
@@ -251,15 +254,13 @@ pub fn must_be_sync(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// only compiled when `is_sync` feature gate is set.
 /// When `is_sync` is not set, marked code is removed.
 #[proc_macro_attribute]
-pub fn sync_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
-    #[cfg(not(feature = "is_sync"))]
-    let token = quote!();
-    #[cfg(feature = "is_sync")]
-    let token = {
-        let input = TokenStream2::from(_input);
+pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input = TokenStream2::from(input);
+    let token = if cfg!(feature = "is_sync") {
         quote!(#input)
+    } else {
+        quote!()
     };
-
     token.into()
 }
 
@@ -268,14 +269,100 @@ pub fn sync_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
 /// only compiled when `is_sync` feature gate is not set.
 /// When `is_sync` is set, marked code is removed.
 #[proc_macro_attribute]
-pub fn async_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
-    #[cfg(not(feature = "is_sync"))]
-    let token = {
-        let input = TokenStream2::from(_input);
+pub fn async_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input = TokenStream2::from(input);
+    let token = if cfg!(feature = "is_sync") {
+        quote!()
+    } else {
         quote!(#input)
     };
-    #[cfg(feature = "is_sync")]
-    let token = quote!();
-
     token.into()
+}
+
+#[derive(Debug, FromMeta)]
+struct TestArgs {
+    #[darling(rename = "async")]
+    r#async: String,
+    sync: String,
+    #[darling(default)]
+    test: String,
+}
+
+/// Handy macro to unify test code of sync and async code
+///
+/// Since the API of both sync and async code are the same,
+/// with only difference that async functions must be awaited.
+/// So it's tedious to write unit sync and async respectively.
+///
+/// This macro helps unify the sync and async unit test code.
+/// There are three options to customize:
+/// 1. `sync`: when to treat as sync code
+/// 1. `async`: when to treat as async
+/// 1. `test`: what lib to run asyync test: `async-std::test`, `tokio::test`
+/// or any valid attribute macro. By default, it's set to `async_std::test`.
+///
+/// **ATTENTION**: do not write await inside a assert macro
+///
+/// - Examples
+///
+/// ```rust
+/// #[maybe_async]
+/// async fn async_fn() -> bool {
+///     true
+/// }
+///
+/// #[maybe_async::test(
+///     sync = r#"feature="is_sync""#,
+///     async = r#"not(feature="is_sync")"#,
+///     test = "async_std::test"
+/// )]
+/// async fn test_async_fn() {
+///     let res = async_fn().await;
+///     assert_eq!(res, true);
+/// }
+/// ```
+///
+/// The above code is transcripted to the following code:
+///
+/// ```rust
+/// # #[maybe_async]
+/// # async fn async_fn() -> bool { true }
+///
+/// #[cfg_attr(
+///     any(not(feature = "is_sync")),
+///     maybe_async::must_be_async,
+///     async_std::test
+/// )]
+/// #[cfg_attr(any(feature = "is_sync"), maybe_async::must_be_sync, test)]
+/// async fn test_async_fn1() {
+///     let res = async_fn().await;
+///     assert_eq!(res, true);
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
+    let attr_args = parse_macro_input!(args as AttributeArgs);
+    let input = TokenStream2::from(input);
+
+    let args = match TestArgs::from_list(&attr_args) {
+        Ok(v) => v,
+        Err(e) => {
+            return TokenStream::from(e.write_errors());
+        }
+    };
+
+    let async_cond: TokenStream2 = args.r#async.parse().unwrap();
+    let sync_cond: TokenStream2 = args.sync.parse().unwrap();
+    let async_test_macro: TokenStream2 = if args.test.is_empty() {
+        quote!(tokio::test)
+    } else {
+        args.test.parse().unwrap()
+    };
+
+    quote!(
+        #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test_macro)]
+        #[cfg_attr(#sync_cond, maybe_async::must_be_sync, test)]
+        #input
+    )
+    .into()
 }
