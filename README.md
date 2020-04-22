@@ -114,11 +114,13 @@ type Method = String;
 #[maybe_async::maybe_async]
 trait InnerClient {
     async fn request(method: Method, url: Url, data: String) -> Response;
+    #[inline]
     async fn post(url: Url, data: String) -> Response {
-        Self::request(String::from("post"), url, data)
+        Self::request(String::from("post"), url, data).await
     }
+    #[inline]
     async fn delete(url: Url, data: String) -> Response {
-        Self::request(String::from("delete"), url, data)
+        Self::request(String::from("delete"), url, data).await
     }
 }
 
@@ -127,13 +129,14 @@ pub struct ServiceClient;
 
 /// Code of upstream API are almost the same for sync and async,
 /// except for async/await keyword.
-#[maybe_async::maybe_async]
 impl ServiceClient {
+    #[maybe_async::maybe_async]
     async fn create_bucket(name: String) -> Response {
-        Self::post("http://correct_url4create", String::from("my_bucket"))
+        Self::post("http://correct_url4create", String::from("my_bucket")).await
     }
+    #[maybe_async::maybe_async]
     async fn delete_bucket(name: String) -> Response {
-        Self::delete("http://correct_url4delete", String::from("my_bucket"))
+        Self::delete("http://correct_url4delete", String::from("my_bucket")).await
     }
     // and another thousands of functions that interact with service side
 }
