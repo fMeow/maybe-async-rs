@@ -14,13 +14,12 @@ keywords = ["maybe", "async", "futures", "macros", "proc_macro"]
 proc-macro2 = "1.0"
 quote = "1.0"
 syn = { version = "1.0", features = ["visit-mut"] }
-darling = "0.10"
+proc-macro-rules = "0.2.1"
 
 [lib]
 proc-macro = true
 
 [badges]
-travis-ci = { repository = "fMeow/maybe-async-rs", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dev-dependencies]
