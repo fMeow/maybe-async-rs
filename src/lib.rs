@@ -146,7 +146,7 @@
 //!     fn request(method: Method, url: Url, data: String) -> Response {
 //!         // your implementation for sync, like use
 //!         // `reqwest::blocking` to send request
-//!         String::from("pretent we have a response")
+//!         String::from("pretend we have a response")
 //!     }
 //! }
 //!
@@ -156,7 +156,7 @@
 //!     async fn request(method: Method, url: Url, data: String) -> Response {
 //!         // your implementation for async, like use `reqwest::client`
 //!         // or `async_std` to send request
-//!         String::from("pretent we have a response")
+//!         String::from("pretend we have a response")
 //!     }
 //! }
 //! ```
@@ -270,9 +270,10 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 
-use darling::FromMeta;
-use proc_macro2::TokenStream as TokenStream2;
-use syn::{parse_macro_input, AttributeArgs, ImplItem, TraitItem};
+use proc_macro2::{Span, TokenStream as TokenStream2};
+use syn::{
+    parse_macro_input, spanned::Spanned, AttributeArgs, ImplItem, Lit, Meta, NestedMeta, TraitItem,
+};
 
 use quote::quote;
 
@@ -381,13 +382,22 @@ pub fn async_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
     token.into()
 }
 
-#[derive(Debug, FromMeta)]
-struct TestArgs {
-    #[darling(rename = "async")]
-    r#async: String,
-    sync: String,
-    #[darling(default)]
-    test: String,
+macro_rules! match_nested_meta_to_str_lit {
+    ($t:expr) => {
+        match $t {
+            NestedMeta::Lit(lit) => {
+                match lit {
+                    Lit::Str(s) => {
+                        s.value().parse::<TokenStream2>().unwrap()
+                    }
+                    _ => {
+                        return syn::Error::new(lit.span(), "expected meta or string literal").to_compile_error().into();
+                    }
+                }
+            }
+            NestedMeta::Meta(meta) => quote!(#meta)
+        }
+    };
 }
 
 /// Handy macro to unify test code of sync and async code
@@ -397,11 +407,10 @@ struct TestArgs {
 /// So it's tedious to write unit sync and async respectively.
 ///
 /// This macro helps unify the sync and async unit test code.
-/// There are three options to customize:
-/// 1. `sync`: when to treat as sync code
-/// 1. `async`: when to treat as async
-/// 1. `test`: what lib to run asyync test: `async-std::test`, `tokio::test`
-/// or any valid attribute macro. By default, it's set to `async_std::test`.
+/// Pass the condition to treat test code as sync as the first
+/// argument. And specify the condition when to treat test code
+/// as async and the lib to run async test, e.x. `async-std::test`,
+/// `tokio::test`, or any valid attribute macro.
 ///
 /// **ATTENTION**: do not write await inside a assert macro
 ///
@@ -414,11 +423,21 @@ struct TestArgs {
 /// }
 ///
 /// #[maybe_async::test(
-///     sync = r#"feature="is_sync""#,
-///     async = r#"not(feature="is_sync")"#,
-///     test = "async_std::test"
+///     // when to treat the test code as sync version
+///     feature="is_sync",
+///     // when to run async test
+///     async(all(not(feature="is_sync"), feature="async_std"), async_std::test),
+///     // you can specify multiple conditions for different async runtime
+///     async(all(not(feature="is_sync"), feature="tokio"), tokio::test)
 /// )]
 /// async fn test_async_fn() {
+///     let res = async_fn().await;
+///     assert_eq!(res, true);
+/// }
+///
+/// // Only run test in sync version
+/// #[maybe_async::test(feature = "is_sync")]
+/// async fn test_sync_fn() {
 ///     let res = async_fn().await;
 ///     assert_eq!(res, true);
 /// }
@@ -427,17 +446,33 @@ struct TestArgs {
 /// The above code is transcripted to the following code:
 ///
 /// ```rust
+/// # use maybe_async::{must_be_async, must_be_sync, sync_impl};
 /// # #[maybe_async::maybe_async]
 /// # async fn async_fn() -> bool { true }
 ///
+/// // convert to sync version when sync condition is met, keep in async version when corresponding
+/// // condition is met
+/// #[cfg_attr(feature = "is_sync", must_be_sync, test)]
 /// #[cfg_attr(
-///     any(not(feature = "is_sync")),
-///     maybe_async::must_be_async,
+///     all(not(feature = "is_sync"), feature = "async_std"),
+///     must_be_async,
 ///     async_std::test
 /// )]
-/// #[cfg_attr(any(feature = "is_sync"), maybe_async::must_be_sync, test)]
-/// async fn test_async_fn1() {
+/// #[cfg_attr(
+///     all(not(feature = "is_sync"), feature = "tokio"),
+///     must_be_async,
+///     tokio::test
+/// )]
+/// async fn test_async_fn() {
 ///     let res = async_fn().await;
+///     assert_eq!(res, true);
+/// }
+///
+/// // force converted to sync function, and only compile on sync condition
+/// #[cfg(feature = "is_sync")]
+/// #[test]
+/// fn test_sync_fn() {
+///     let res = async_fn();
 ///     assert_eq!(res, true);
 /// }
 /// ```
@@ -445,26 +480,79 @@ struct TestArgs {
 pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
     let attr_args = parse_macro_input!(args as AttributeArgs);
     let input = TokenStream2::from(input);
+    if attr_args.len() < 1 {
+        return syn::Error::new(
+            Span::call_site(),
+            "Must not be empty, at least specify the condition for sync code",
+        )
+        .to_compile_error()
+        .into();
+    }
 
-    let args = match TestArgs::from_list(&attr_args) {
-        Ok(v) => v,
-        Err(e) => {
-            return TokenStream::from(e.write_errors());
-        }
-    };
-
-    let async_cond: TokenStream2 = args.r#async.parse().unwrap();
-    let sync_cond: TokenStream2 = args.sync.parse().unwrap();
-    let async_test_macro: TokenStream2 = if args.test.is_empty() {
-        quote!(tokio::test)
-    } else {
-        args.test.parse().unwrap()
-    };
-
-    quote!(
-        #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test_macro)]
+    // The first attributes indicates sync condition
+    let sync_cond = match_nested_meta_to_str_lit!(attr_args.first().unwrap());
+    let mut ts = if attr_args.len() == 1 {
+        quote!(
+        #[cfg(#sync_cond)]
         #[cfg_attr(#sync_cond, maybe_async::must_be_sync, test)]
-        #input
-    )
-    .into()
+        )
+    } else {
+        quote!(#[cfg_attr(#sync_cond, maybe_async::must_be_sync, test)])
+    };
+
+    // The rest attributes indicates async condition and async test macro
+    // only accepts in the forms of `async(cond, test_macro)`, but `cond` and
+    // `test_macro` can be either meta attributes or string literal
+    let mut async_token = Vec::new();
+    for async_meta in attr_args.into_iter().skip(1) {
+        match async_meta {
+            NestedMeta::Meta(meta) => match meta {
+                Meta::List(list) => {
+                    let name = list.path.segments[0].ident.to_string();
+                    if name.ne("async") {
+                        return syn::Error::new(
+                            list.path.span(),
+                            format!("Unknown path: `{}`, must be `async`", name),
+                        )
+                        .to_compile_error()
+                        .into();
+                    }
+                    if list.nested.len() == 2 {
+                        let async_cond =
+                            match_nested_meta_to_str_lit!(list.nested.first().unwrap());
+                        let async_test = match_nested_meta_to_str_lit!(list.nested.last().unwrap());
+                        let attr = quote!( #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test)] );
+                        async_token.push(attr);
+                    } else {
+                        let msg = format!(
+                            "Must pass two metas or string literals like `async(condition, \
+                             async_test_macro)`, you passed {} metas.",
+                            list.nested.len()
+                        );
+                        return syn::Error::new(list.span(), msg).to_compile_error().into();
+                    }
+                }
+                _ => {
+                    return syn::Error::new(
+                        meta.span(),
+                        "Must be list of metas like: `async(condition, async_test_macro)`",
+                    )
+                    .to_compile_error()
+                    .into();
+                }
+            },
+            NestedMeta::Lit(lit) => {
+                return syn::Error::new(
+                    lit.span(),
+                    "Must be list of metas like: `async(condition, async_test_macro)`",
+                )
+                .to_compile_error()
+                .into();
+            }
+        };
+    }
+
+    async_token.into_iter().for_each(|t| ts.extend(t));
+    ts.extend(quote!( #input ));
+    ts.into()
 }
