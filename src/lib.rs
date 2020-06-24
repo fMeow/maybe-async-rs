@@ -282,11 +282,19 @@ use crate::{parse::Item, visit::AsyncAwaitRemoval};
 mod parse;
 mod visit;
 
-fn convert_async(input: &mut Item) -> TokenStream2 {
-    match input {
-        Item::Impl(item) => quote!(#[async_trait::async_trait]#item),
-        Item::Trait(item) => quote!(#[async_trait::async_trait]#item),
-        Item::Fn(item) => quote!(#item),
+fn convert_async(input: &mut Item, send: bool) -> TokenStream2 {
+    if send {
+        match input {
+            Item::Impl(item) => quote!(#[async_trait::async_trait]#item),
+            Item::Trait(item) => quote!(#[async_trait::async_trait]#item),
+            Item::Fn(item) => quote!(#item),
+        }
+    } else {
+        match input {
+            Item::Impl(item) => quote!(#[async_trait::async_trait(?Send)]#item),
+            Item::Trait(item) => quote!(#[async_trait::async_trait(?Send)]#item),
+            Item::Fn(item) => quote!(#item),
+        }
     }
     .into()
 }
@@ -327,22 +335,41 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
 ///
 /// Can be applied to trait item, trait impl, functions and struct impls.
 #[proc_macro_attribute]
-pub fn maybe_async(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn maybe_async(args: TokenStream, input: TokenStream) -> TokenStream {
+    let send = match args.to_string().replace(" ", "").as_str() {
+        "" | "Send" => true,
+        "?Send" => false,
+        _ => {
+            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
+                .to_compile_error()
+                .into()
+        }
+    };
+
     let mut item = parse_macro_input!(input as Item);
 
     let token = if cfg!(feature = "is_sync") {
         convert_sync(&mut item)
     } else {
-        convert_async(&mut item)
+        convert_async(&mut item, send)
     };
     token.into()
 }
 
 /// convert marked async code to async code with `async-trait`
 #[proc_macro_attribute]
-pub fn must_be_async(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn must_be_async(args: TokenStream, input: TokenStream) -> TokenStream {
+    let send = match args.to_string().replace(" ", "").as_str() {
+        "" | "Send" => true,
+        "?Send" => false,
+        _ => {
+            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
+                .to_compile_error()
+                .into()
+        }
+    };
     let mut item = parse_macro_input!(input as Item);
-    convert_async(&mut item).into()
+    convert_async(&mut item, send).into()
 }
 
 /// convert marked async code to sync code
@@ -372,12 +399,22 @@ pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// only compiled when `is_sync` feature gate is not set.
 /// When `is_sync` is set, marked code is removed.
 #[proc_macro_attribute]
-pub fn async_impl(_args: TokenStream, _input: TokenStream) -> TokenStream {
+pub fn async_impl(args: TokenStream, _input: TokenStream) -> TokenStream {
+    let send = match args.to_string().replace(" ", "").as_str() {
+        "" | "Send" => true,
+        "?Send" => false,
+        _ => {
+            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
+                .to_compile_error()
+                .into()
+        }
+    };
+
     let token = if cfg!(feature = "is_sync") {
         quote!()
     } else {
         let mut item = parse_macro_input!(_input as Item);
-        convert_async(&mut item)
+        convert_async(&mut item, send)
     };
     token.into()
 }
