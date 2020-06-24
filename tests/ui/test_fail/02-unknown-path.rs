@@ -5,12 +5,13 @@ async fn async_fn() -> bool {
     true
 }
 
-#[maybe_async::test(
-    sync = r#"feature="is_sync""#,
-    async = r#"not(feature="is_sync")"#,
-    test = "async_std::test"
-)]
+// should only accept `async`
+#[maybe_async::test(feature="is_sync", unknown(not(feature="is_sync"), async_std::test))]
 async fn test_async_fn() {
     let res = async_fn().await;
     assert_eq!(res, true);
+}
+
+fn main() {
+
 }

@@ -2,7 +2,7 @@
 
 use maybe_async::maybe_async;
 
-#[maybe_async]
+#[maybe_async(Send)]
 trait Trait {
     fn sync_fn() {}
 
@@ -13,7 +13,7 @@ trait Trait {
     }
 }
 
-#[maybe_async]
+#[maybe_async(?Send)]
 pub trait PubTrait {
     fn sync_fn() {}
 
@@ -28,7 +28,8 @@ pub trait PubTrait {
 async fn async_fn() {}
 
 #[maybe_async]
-pub async fn pub_async_fn() {}
+pub async fn pub_async_fn() {
+}
 
 struct Struct;
 

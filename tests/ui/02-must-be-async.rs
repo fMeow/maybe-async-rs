@@ -11,6 +11,14 @@ trait Trait {
     }
 }
 
+#[maybe_async::maybe_async(?Send)]
+trait NotSendTrait {
+    async fn declare_async_not_send(&self);
+
+    async fn async_fn_not_send(&self) {
+        self.declare_async_not_send().await
+    }
+}
 #[maybe_async::maybe_async]
 pub trait PubTrait {
     fn sync_fn() {}
@@ -44,6 +52,16 @@ impl Trait for Struct {
 
     async fn async_fn(&self) {
         async { self.declare_async().await }.await
+    }
+}
+
+#[cfg(not(feature = "is_sync"))]
+#[maybe_async::must_be_async(?Send)]
+impl NotSendTrait for Struct {
+    async fn declare_async_not_send(&self) {}
+
+    async fn async_fn_not_send(&self) {
+        async { self.declare_async_not_send().await }.await
     }
 }
 
