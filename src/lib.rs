@@ -29,9 +29,11 @@
 //!
 //! - `must_be_async`
 //!
-//!     **keep async**. Add `async_trait` attribute macro for trait declaration
+//!     **Keep async**. Add `async_trait` attribute macro for trait declaration
 //!     or implementation to bring async fn support in traits.
 //!
+//!     To avoid having "Send" and "Sync" bounds placed on the async trait
+//!     methods, invoke the maybe_async macro as #[must_be_async(?Send)].
 //!
 //! - `must_be_sync`
 //!
@@ -40,7 +42,7 @@
 //!
 //! - `maybe_async`
 //!
-//!     offers a unified feature gate to provide sync and async conversion on
+//!     Offers a unified feature gate to provide sync and async conversion on
 //!     demand by feature gate `is_sync`, with **async first** policy.
 //!
 //!     Want to keep async code? add `maybe_async` in dependencies with default
@@ -60,24 +62,56 @@
 //!     maybe_async = { version = "0.1", features = ["is_sync"] }
 //!     ```
 //!
+//!     Not all async traits need futures that are `dyn Future + Send`.
+//!     To avoid having "Send" and "Sync" bounds placed on the async trait
+//!     methods, invoke the maybe_async macro as #[maybe_async(?Send)] on both
+//!     the trait and the impl blocks.
+//!
+//!
 //! - `sync_impl`
 //!
 //!     Although most of the API are almost the same, there definitely come to a
 //!     point when the async and sync version should differ greatly. For
-//! example, a     MongoDB client may use the same API for async and sync
-//! verison, but the code     to actually send reqeust are quite different.
+//!     example, a MongoDB client may use the same API for async and sync
+//!     verison, but the code to actually send reqeust are quite different.
 //!
 //!     Here, we can use `sync_impl` to mark a synchronous implementation, and a
 //!     sync implementation shoule disappear when we want async version.
 //!
 //! - `async_impl`
 //!
-//!     an async implementation shoule simply disappear when we want sync
-//! version.
+//!     An async implementation shoule simply disappear when we want sync
+//!     version.
+//!
+//!     To avoid having "Send" and "Sync" bounds placed on the async trait
+//!     methods, invoke the maybe_async macro as #[async_impl(?Send)].
 //!
 //! - `test`
 //!
-//!     handy macro to unify async and sync unit test code
+//!     Handy macro to unify async and sync unit test code.
+//!
+//!     You can specify the condition to compile to sync test code
+//!     and also the conditions to compile to async test code with given test
+//!     macro, e.x. `tokio::test`, `async_std::test` and etc. When only sync
+//!     condition is specified,the test code only compiles when sync condition
+//!     is met.
+//!
+//!     ```rust
+//!     # #[maybe_async::maybe_async]
+//!     # async fn async_fn() -> bool {
+//!     #    true
+//!     # }
+//!
+//!     #[maybe_async::test(
+//!         feature="is_sync",
+//!         async(all(not(feature="is_sync"), feature="async_std"), async_std::test),
+//!        async(all(not(feature="is_sync"), feature="tokio"), tokio::test)
+//!    )]
+//!     async fn test_async_fn() {
+//!         let res = async_fn().await;
+//!         assert_eq!(res, true);
+//!     }
+//!     ```
 //!
 //! ## Motivation
 //!
@@ -167,7 +201,7 @@
 //! ### Example for maybe_async conversion
 //!
 //! ```rust
-//! #[maybe_async::maybe_async]
+//! #[maybe_async::maybe_async(?Send)]
 //! trait A {
 //!     async fn async_fn_name() -> Result<(), ()> {
 //!         Ok(())
@@ -179,7 +213,7 @@
 //!
 //! struct Foo;
 //!
-//! #[maybe_async::maybe_async]
+//! #[maybe_async::maybe_async(?Send)]
 //! impl A for Foo {
 //!     async fn async_fn_name() -> Result<(), ()> {
 //!         Ok(())
@@ -203,7 +237,7 @@
 //!
 //! ```rust
 //! # use async_trait::async_trait;
-//! #[async_trait]
+//! #[async_trait(?Send)]
 //! trait A {
 //!     async fn maybe_async_fn_name() -> Result<(), ()> {
 //!         Ok(())
@@ -215,7 +249,7 @@
 //!
 //! struct Foo;
 //!
-//! #[async_trait]
+//! #[async_trait(?Send)]
 //! impl A for Foo {
 //!     async fn maybe_async_fn_name() -> Result<(), ()> {
 //!         Ok(())
@@ -342,7 +376,7 @@ pub fn maybe_async(args: TokenStream, input: TokenStream) -> TokenStream {
         _ => {
             return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
                 .to_compile_error()
-                .into()
+                .into();
         }
     };
 
@@ -365,7 +399,7 @@ pub fn must_be_async(args: TokenStream, input: TokenStream) -> TokenStream {
         _ => {
             return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
                 .to_compile_error()
-                .into()
+                .into();
         }
     };
     let mut item = parse_macro_input!(input as Item);
@@ -406,7 +440,7 @@ pub fn async_impl(args: TokenStream, _input: TokenStream) -> TokenStream {
         _ => {
             return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
                 .to_compile_error()
-                .into()
+                .into();
         }
     };
 
