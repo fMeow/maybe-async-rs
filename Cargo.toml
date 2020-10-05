@@ -1,38 +1,44 @@
 [package]
 name = "maybe-async"
-version = "0.2.0"
-authors = ["Guoli Lyu <guoli-lv@hotmail.com>"]
+version = "0.2.1"
+authors = [ "Guoli Lyu <guoli-lv@hotmail.com>" ]
 edition = "2018"
 readme = "README.md"
 license = "MIT"
 description = "A procedure macro to unify SYNC and ASYNC implementation"
 repository = "https://github.com/fMeow/maybe-async-rs"
 documentation = "https://docs.rs/maybe-async"
-keywords = ["maybe", "async", "futures", "macros", "proc_macro"]
+keywords = [ "maybe", "async", "futures", "macros", "proc_macro" ]
 
 [dependencies]
 proc-macro2 = "1.0"
 quote = "1.0"
-syn = { version = "1.0", features = ["visit-mut"] }
+
+  [dependencies.syn]
+  version = "1.0"
+  features = [ "visit-mut" ]
 
 [lib]
 proc-macro = true
 
-[badges]
-maintenance = { status = "actively-developed" }
+[badges.maintenance]
+status = "actively-developed"
 
 [dev-dependencies]
-trybuild = { version = "1", features = ["diff"] }
 async-trait = "0.1"
 
-[dev-dependencies.async-std]
-version = "1"
-features = ["attributes"]
+  [dev-dependencies.trybuild]
+  version = "1"
+  features = [ "diff" ]
 
-[dev-dependencies.tokio]
-version = "0.2.0"
-features = ["macros", "rt-core"]
+  [dev-dependencies.async-std]
+  version = "1"
+  features = [ "attributes" ]
+
+  [dev-dependencies.tokio]
+  version = "0.2.0"
+  features = [ "macros", "rt-core" ]
 
 [features]
-default = []
-is_sync = []
+default = [ ]
+is_sync = [ ]
