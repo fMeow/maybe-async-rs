@@ -334,7 +334,7 @@ fn convert_async(input: &mut Item, send: bool) -> TokenStream2 {
 }
 
 fn convert_sync(input: &mut Item) -> TokenStream2 {
-    match input {
+    let token = match input {
         Item::Impl(item) => {
             for inner in &mut item.items {
                 if let ImplItem::Method(ref mut method) = inner {
@@ -361,8 +361,8 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
             }
             AsyncAwaitRemoval.remove_async_await(quote!(#item))
         }
-    }
-    .into()
+    };
+    quote!(#[allow(unused_parens)]#token).into()
 }
 
 /// maybe_async attribute macro
