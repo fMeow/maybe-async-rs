@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    parse_quote, token,
+    parse_quote,
     visit_mut::{self, VisitMut},
-    Expr, ExprBlock, ExprParen, File,
+    Attribute, Block, Expr, ExprBlock, File,
 };
 
 pub struct AsyncAwaitRemoval;
@@ -19,19 +19,24 @@ impl VisitMut for AsyncAwaitRemoval {
     fn visit_expr_mut(&mut self, node: &mut Expr) {
         match node {
             Expr::Await(expr) => {
+                let mut attrs = expr.attrs.clone();
+                let allow: Attribute = parse_quote! {#[allow(unused_braces)]};
+                attrs.push(allow);
+
                 let inner = &expr.base;
-                let block = ExprParen {
-                    attrs: expr.attrs.clone(),
-                    expr: parse_quote!(#inner),
-                    paren_token: token::Paren(expr.await_token.span),
-                };
-                *node = Expr::Paren(block)
+                let block: Block = parse_quote!({#inner});
+
+                *node = Expr::Block(ExprBlock {
+                    attrs,
+                    block,
+                    label: None,
+                });
             }
             Expr::Async(expr) => {
                 let inner = &expr.block;
                 let block = ExprBlock {
                     attrs: expr.attrs.clone(),
-                    block: parse_quote!(#inner),
+                    block: inner.clone(),
                     label: None,
                 };
                 *node = Expr::Block(block);

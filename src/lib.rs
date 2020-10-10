@@ -105,8 +105,8 @@
 //!     #[maybe_async::test(
 //!         feature="is_sync",
 //!         async(all(not(feature="is_sync"), feature="async_std"), async_std::test),
-//!        async(all(not(feature="is_sync"), feature="tokio"), tokio::test)
-//!    )]
+//!         async(all(not(feature="is_sync"), feature="tokio"), tokio::test)
+//!     )]
 //!     async fn test_async_fn() {
 //!         let res = async_fn().await;
 //!         assert_eq!(res, true);
@@ -334,7 +334,7 @@ fn convert_async(input: &mut Item, send: bool) -> TokenStream2 {
 }
 
 fn convert_sync(input: &mut Item) -> TokenStream2 {
-    let token = match input {
+    match input {
         Item::Impl(item) => {
             for inner in &mut item.items {
                 if let ImplItem::Method(ref mut method) = inner {
@@ -361,8 +361,8 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
             }
             AsyncAwaitRemoval.remove_async_await(quote!(#item))
         }
-    };
-    quote!(#[allow(unused_parens)]#token).into()
+    }
+    .into()
 }
 
 /// maybe_async attribute macro
