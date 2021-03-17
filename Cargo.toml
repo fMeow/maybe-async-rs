@@ -36,8 +36,8 @@ async-trait = "0.1"
   features = [ "attributes" ]
 
   [dev-dependencies.tokio]
-  version = "0.2.0"
-  features = [ "macros", "rt-core" ]
+  version = "1"
+  features = [ "macros", "rt" ]
 
 [features]
 default = [ ]
