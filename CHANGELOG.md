@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/guoli-lyu/maybe-async-rs/compare/v0.2.2...v0.2.3) (2021-03-27)
+
+
+### Bug Fixes
+
+* enable full feature gate for syn ([614c085](https://github.com/guoli-lyu/maybe-async-rs/commit/614c085444caf6d0d493422ca20f8ed3b86b7315))
+
 ### [0.2.2](https://github.com/guoli-lyu/maybe-async-rs/compare/v0.2.1...v0.2.2) (2020-10-19)
 
 
