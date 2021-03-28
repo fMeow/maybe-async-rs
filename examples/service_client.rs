@@ -22,6 +22,9 @@ trait InnerClient {
     }
 }
 
+/// The higher level API for end user.
+pub struct ServiceClient;
+
 /// Synchronous  implementation, only compiles when `is_sync` feature is off.
 /// Else the compiler will complain that *request is defined multiple times* and
 /// blabla.
@@ -43,8 +46,6 @@ impl InnerClient for ServiceClient {
         String::from("pretend we have a response")
     }
 }
-/// The higher level API for end user.
-pub struct ServiceClient;
 
 /// Code of upstream API are almost the same for sync and async,
 /// except for async/await keyword.
