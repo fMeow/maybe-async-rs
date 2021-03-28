@@ -52,8 +52,8 @@
 //!
 //! To use `maybe-async`, we must know which block of codes is only used on
 //! blocking implementation, and which on async. These two implementation should
-//! share the same API except for async/await keywords, and use `sync_impl` and
-//! `async_impl` to mark these implementation.
+//! share the same function signatures except for async/await keywords, and use
+//! `sync_impl` and `async_impl` to mark these implementation.
 //!
 //! Use `maybe_async` macro on codes that share the same API on both async and
 //! blocking code except for async/await keywords. And use feature gate
@@ -69,7 +69,7 @@
 //!
 //!     ```toml
 //!     [dependencies]
-//!     maybe_async = "0.1"
+//!     maybe_async = "0.2"
 //!     ```
 //!
 //!     Wanna convert async code to sync? Add `maybe_async` to dependencies with
@@ -78,7 +78,7 @@
 //!
 //!     ```toml
 //!     [dependencies]
-//!     maybe_async = { version = "0.1", features = ["is_sync"] }
+//!     maybe_async = { version = "0.2", features = ["is_sync"] }
 //!     ```
 //!
 //!     Not all async traits need futures that are `dyn Future + Send`.
