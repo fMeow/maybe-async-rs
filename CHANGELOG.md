@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/guoli-lyu/maybe-async-rs/compare/v0.2.3...v0.2.4) (2021-03-28)
+
+
+### Features
+
+* replace generic type of Future with Output ([f296cc0](https://github.com/guoli-lyu/maybe-async-rs/commit/f296cc05c90923ae3a3eeea3c5173d06d642c2ab))
+* search trait bound that ends with `Future` ([3508ff2](https://github.com/guoli-lyu/maybe-async-rs/commit/3508ff2987cce61808297aa920c522e0f2012a8a))
+
 ### [0.2.3](https://github.com/guoli-lyu/maybe-async-rs/compare/v0.2.2...v0.2.3) (2021-03-27)
 
 
