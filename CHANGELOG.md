@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.6](https://github.com/guoli-lyu/maybe-async-rs/compare/v0.2.4...v0.2.6) (2021-05-28)
+
+
+### Bug Fixes
+
+* remove async test if condition not match ([0089daa](https://github.com/guoli-lyu/maybe-async-rs/commit/0089daad6e3419e11d123e8c5c87a1139880027f))
+* test is removed when is_sync ([377815a](https://github.com/guoli-lyu/maybe-async-rs/commit/377815a7a81efc4a0332cc2716a7d603b350ff03))
+
 ### [0.2.5](https://github.com/guoli-lyu/maybe-async-rs/compare/v0.2.4...v0.2.5) (2021-05-28)
 
 
