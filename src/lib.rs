@@ -567,7 +567,10 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
                         let async_cond =
                             match_nested_meta_to_str_lit!(list.nested.first().unwrap());
                         let async_test = match_nested_meta_to_str_lit!(list.nested.last().unwrap());
-                        let attr = quote!( #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test)] );
+                        let attr = quote!(
+                            #[cfg(#async_cond)]
+                            #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test)]
+                        );
                         async_token.push(attr);
                     } else {
                         let msg = format!(
