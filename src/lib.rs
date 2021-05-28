@@ -537,19 +537,13 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 
     // The first attributes indicates sync condition
     let sync_cond = match_nested_meta_to_str_lit!(attr_args.first().unwrap());
-    let mut ts = if attr_args.len() == 1 {
-        quote!(
-        #[cfg(#sync_cond)]
-        #[cfg_attr(#sync_cond, maybe_async::must_be_sync, test)]
-        )
-    } else {
-        quote!(#[cfg_attr(#sync_cond, maybe_async::must_be_sync, test)])
-    };
+    let mut ts = quote!(#[cfg_attr(#sync_cond, maybe_async::must_be_sync, test)]);
 
     // The rest attributes indicates async condition and async test macro
     // only accepts in the forms of `async(cond, test_macro)`, but `cond` and
     // `test_macro` can be either meta attributes or string literal
     let mut async_token = Vec::new();
+    let mut async_conditions = Vec::new();
     for async_meta in attr_args.into_iter().skip(1) {
         match async_meta {
             NestedMeta::Meta(meta) => match meta {
@@ -568,9 +562,9 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
                             match_nested_meta_to_str_lit!(list.nested.first().unwrap());
                         let async_test = match_nested_meta_to_str_lit!(list.nested.last().unwrap());
                         let attr = quote!(
-                            #[cfg(#async_cond)]
                             #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test)]
                         );
+                        async_conditions.push(async_cond);
                         async_token.push(attr);
                     } else {
                         let msg = format!(
@@ -603,5 +597,16 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 
     async_token.into_iter().for_each(|t| ts.extend(t));
     ts.extend(quote!( #input ));
-    ts.into()
+    if !async_conditions.is_empty() {
+        quote! {
+            #[cfg(any(#sync_cond, #(#async_conditions),*))]
+            #ts
+        }
+    } else {
+        quote! {
+            #[cfg(#sync_cond)]
+            #ts
+        }
+    }
+    .into()
 }
