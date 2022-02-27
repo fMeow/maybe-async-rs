@@ -291,6 +291,15 @@ use crate::{parse::Item, visit::AsyncAwaitRemoval};
 mod parse;
 mod visit;
 
+#[cfg(all(feature = "is_sync", feature = "is_async"))]
+compile_error!("feature \"is_sync\" and feature \"is_async\" cannot be enabled at the same time");
+
+macro_rules! is_async {
+    () => {
+        cfg!(feature = "is_async") || !(cfg!(feature = "is_sync") || cfg!(feature = "default_sync"))
+    };
+}
+
 fn convert_async(input: &mut Item, send: bool) -> TokenStream2 {
     if send {
         match input {
@@ -346,39 +355,38 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
 #[proc_macro_attribute]
 pub fn maybe_async(args: TokenStream, input: TokenStream) -> TokenStream {
     let send = match args.to_string().replace(" ", "").as_str() {
-        "" | "Send" => true,
-        "?Send" => false,
-        _ => {
-            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
-                .to_compile_error()
-                .into();
+        "" | "Send" => Some(true),
+        "?Send" => Some(false),
+        _ => None,
+    };
+
+    match (is_async!(), send) {
+        (true, Some(send)) => {
+            let mut item = parse_macro_input!(input as Item);
+            convert_async(&mut item, send).into()
         }
-    };
-
-    let mut item = parse_macro_input!(input as Item);
-
-    let token = if cfg!(feature = "is_sync") {
-        convert_sync(&mut item)
-    } else {
-        convert_async(&mut item, send)
-    };
-    token.into()
+        (false, _) => {
+            let mut item = parse_macro_input!(input as Item);
+            convert_sync(&mut item).into()
+        }
+        _ => input,
+    }
 }
 
 /// convert marked async code to async code with `async-trait`
 #[proc_macro_attribute]
 pub fn must_be_async(args: TokenStream, input: TokenStream) -> TokenStream {
     let send = match args.to_string().replace(" ", "").as_str() {
-        "" | "Send" => true,
-        "?Send" => false,
-        _ => {
-            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
-                .to_compile_error()
-                .into();
-        }
+        "" | "Send" => Some(true),
+        "?Send" => Some(false),
+        _ => None,
     };
-    let mut item = parse_macro_input!(input as Item);
-    convert_async(&mut item, send).into()
+    if let Some(send) = send {
+        let mut item = parse_macro_input!(input as Item);
+        convert_async(&mut item, send).into()
+    } else {
+        input
+    }
 }
 
 /// convert marked async code to sync code
@@ -395,7 +403,7 @@ pub fn must_be_sync(_args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = TokenStream2::from(input);
-    let token = if cfg!(feature = "is_sync") {
+    let token = if !is_async!() {
         quote!(#input)
     } else {
         quote!()
@@ -408,24 +416,21 @@ pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// only compiled when `is_sync` feature gate is not set.
 /// When `is_sync` is set, marked code is removed.
 #[proc_macro_attribute]
-pub fn async_impl(args: TokenStream, _input: TokenStream) -> TokenStream {
+pub fn async_impl(args: TokenStream, input: TokenStream) -> TokenStream {
     let send = match args.to_string().replace(" ", "").as_str() {
-        "" | "Send" => true,
-        "?Send" => false,
-        _ => {
-            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
-                .to_compile_error()
-                .into();
-        }
+        "" | "Send" => Some(true),
+        "?Send" => Some(false),
+        _ => None,
     };
 
-    let token = if cfg!(feature = "is_sync") {
-        quote!()
-    } else {
-        let mut item = parse_macro_input!(_input as Item);
-        convert_async(&mut item, send)
-    };
-    token.into()
+    match (is_async!(), send) {
+        (true, Some(send)) => {
+            let mut item = parse_macro_input!(input as Item);
+            convert_async(&mut item, send).into()
+        }
+        (false, _) => quote!().into(),
+        _ => input,
+    }
 }
 
 macro_rules! match_nested_meta_to_str_lit {
