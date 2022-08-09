@@ -85,7 +85,7 @@ blocking code except for async/await keywords. And use feature gate
 
     Not all async traits need futures that are `dyn Future + Send`.
     To avoid having "Send" and "Sync" bounds placed on the async trait
-    methods, invoke the maybe_async macro as #[maybe_async(?Send)] on both
+    methods, invoke the maybe_async macro as `#[maybe_async(?Send)]` on both
     the trait and the impl blocks.
 
 
@@ -95,7 +95,7 @@ blocking code except for async/await keywords. And use feature gate
     or implementation to bring async fn support in traits.
 
     To avoid having "Send" and "Sync" bounds placed on the async trait
-    methods, invoke the maybe_async macro as #[must_be_async(?Send)].
+    methods, invoke the maybe_async macro as `#[must_be_async(?Send)]`.
 
 - `must_be_sync`
 
@@ -122,7 +122,7 @@ must     simply disappear when we want async version.
 must     simply disappear when we want sync version.
 
     To avoid having "Send" and "Sync" bounds placed on the async trait
-    methods, invoke the maybe_async macro as #[async_impl(?Send)].
+    methods, invoke the maybe_async macro as `#[async_impl(?Send)]`.
 
 
 - `test`
@@ -155,7 +155,7 @@ must     simply disappear when we want sync version.
 ## What's Under the Hook
 
 `maybe-async` compiles your code in different way with the `is_sync` feature
-gate. It remove all `await` and `async` keywords in your code under
+gate. It removes all `await` and `async` keywords in your code under
 `maybe_async` macro and conditionally compiles codes under `async_impl` and
 `sync_impl`.
 
