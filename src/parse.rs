@@ -1,13 +1,14 @@
 use proc_macro2::Span;
 use syn::{
     parse::{discouraged::Speculative, Parse, ParseStream, Result},
-    Attribute, Error, ItemFn, ItemImpl, ItemTrait,
+    Attribute, Error, ItemFn, ItemImpl, ItemStatic, ItemTrait,
 };
 
 pub enum Item {
     Trait(ItemTrait),
     Impl(ItemImpl),
     Fn(ItemFn),
+    Static(ItemStatic),
 }
 
 macro_rules! fork {
@@ -33,6 +34,9 @@ impl Parse for Item {
         } else if let Some(mut item) = fork!(fork = input).parse::<ItemFn>().ok() {
             item.attrs = attrs;
             Item::Fn(item)
+        } else if let Some(mut item) = fork!(fork = input).parse::<ItemStatic>().ok() {
+            item.attrs = attrs;
+            Item::Static(item)
         } else {
             return Err(Error::new(
                 Span::call_site(),

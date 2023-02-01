@@ -141,9 +141,9 @@
 //!
 //!     #[maybe_async::test(
 //!         feature="is_sync",
-//!         async(all(not(feature="is_sync"), feature="async_std"), async_std::test),
-//!         async(all(not(feature="is_sync"), feature="tokio"), tokio::test)
-//!     )]
+//!         async(all(not(feature="is_sync"), feature="async_std"),
+//! async_std::test),         async(all(not(feature="is_sync"),
+//! feature="tokio"), tokio::test)     )]
 //!     async fn test_async_fn() {
 //!         let res = async_fn().await;
 //!         assert_eq!(res, true);
@@ -297,12 +297,14 @@ fn convert_async(input: &mut Item, send: bool) -> TokenStream2 {
             Item::Impl(item) => quote!(#[async_trait::async_trait]#item),
             Item::Trait(item) => quote!(#[async_trait::async_trait]#item),
             Item::Fn(item) => quote!(#item),
+            Item::Static(item) => quote!(#item),
         }
     } else {
         match input {
             Item::Impl(item) => quote!(#[async_trait::async_trait(?Send)]#item),
             Item::Trait(item) => quote!(#[async_trait::async_trait(?Send)]#item),
             Item::Fn(item) => quote!(#item),
+            Item::Static(item) => quote!(#item),
         }
     }
     .into()
@@ -336,6 +338,7 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
             }
             AsyncAwaitRemoval.remove_async_await(quote!(#item))
         }
+        Item::Static(item) => AsyncAwaitRemoval.remove_async_await(quote!(#item)),
     }
     .into()
 }
