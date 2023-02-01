@@ -139,11 +139,17 @@
 //!     #    true
 //!     # }
 //!
-//!     #[maybe_async::test(
+//!     ##[maybe_async::test(
 //!         feature="is_sync",
-//!         async(all(not(feature="is_sync"), feature="async_std"),
-//! async_std::test),         async(all(not(feature="is_sync"),
-//! feature="tokio"), tokio::test)     )]
+//!         async(
+//!             all(not(feature="is_sync"), feature="async_std"),
+//!             async_std::test
+//!         ),
+//!         async(
+//!             all(not(feature="is_sync"), feature="tokio"),
+//!             tokio::test
+//!         )
+//!     )]
 //!     async fn test_async_fn() {
 //!         let res = async_fn().await;
 //!         assert_eq!(res, true);
