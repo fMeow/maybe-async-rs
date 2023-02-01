@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.7](https://github.com/fMeow/maybe-async-rs/compare/v0.2.6...v0.2.7) (2023-02-01)
+
+
+### Features
+
+* allow `maybe_async` on static ([a08b112](https://github.com/fMeow/maybe-async-rs/commit/a08b11218bab0d1db304a4f68e0230c022632168))
+
+
+### Bug Fixes
+
+* applying to pub(crate) trait fail ([8cf762f](https://github.com/fMeow/maybe-async-rs/commit/8cf762fdeb1d316716fa01fb2525e5a6f5d25987))
+
 ### [0.2.6](https://github.com/guoli-lyu/maybe-async-rs/compare/v0.2.4...v0.2.6) (2021-05-28)
 
 
