@@ -19,7 +19,7 @@
 //! - Switch between sync and async by toggling `is_sync` feature gate in
 //!   `Cargo.toml`.
 //! - use `must_be_async` and `must_be_sync` to keep code in specified version
-//! - use `impl_async` and `impl_sync` to only compile code block on specified
+//! - use `async_impl` and `sync_impl` to only compile code block on specified
 //!   version
 //! - A handy macro to unify unit test code is also provided.
 //!
