@@ -40,5 +40,7 @@ async-trait = "0.1"
   features = [ "macros", "rt-multi-thread" ]
 
 [features]
-default = [ ]
-is_sync = [ ]
+is_async = []
+is_sync = []
+default_sync = []
+default = []
