@@ -4,6 +4,10 @@ on: [push, pull_request]
 
 jobs:
   build_and_test:
+    strategy:
+      matrix:
+        options:
+          ["--features=default", "--no-default-features --features=syn-2"]
 
     runs-on: ubuntu-latest
 
@@ -20,27 +24,27 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --all --bins --examples --tests
+          args: ${{ matrix.options }} --all --bins --examples --tests
 
       - name: tests (async)
         uses: actions-rs/cargo@v1
         timeout-minutes: 40
         with:
           command: test
-          args: --all --no-fail-fast -- --nocapture
+          args: ${{ matrix.options }} --all --no-fail-fast -- --nocapture
 
       - name: check build (is_sync)
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --features=is_sync --all --bins --examples --tests
+          args: ${{ matrix.options }} --features=is_sync --all --bins --examples --tests
 
       - name: tests (is_sync)
         uses: actions-rs/cargo@v1
         timeout-minutes: 40
         with:
           command: test
-          args: --features=is_sync --all --no-fail-fast -- --nocapture
+          args: ${{ matrix.options }} --features=is_sync --all --no-fail-fast -- --nocapture
 
   doc:
     runs-on: ubuntu-latest

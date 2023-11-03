@@ -1,3 +1,9 @@
+#[cfg(feature = "syn-1")]
+use syn_1 as syn;
+
+#[cfg(feature = "syn-2")]
+use syn_2 as syn;
+
 use proc_macro2::Span;
 use syn::{
     parse::{discouraged::Speculative, Parse, ParseStream, Result},

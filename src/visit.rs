@@ -1,13 +1,19 @@
 use std::iter::FromIterator;
 
+#[cfg(feature = "syn-1")]
+use syn_1::{self as syn, GenericArgument::Binding as GenericArgumentBinding};
+
+#[cfg(feature = "syn-2")]
+use syn_2::{self as syn, GenericArgument::AssocType as GenericArgumentBinding};
+
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
     parse_quote,
     punctuated::Punctuated,
     visit_mut::{self, visit_item_mut, visit_path_segment_mut, VisitMut},
-    Expr, ExprBlock, File, GenericArgument, GenericParam, Item, PathArguments, PathSegment, Type,
-    TypeParamBound, WherePredicate,
+    Expr, ExprBlock, File, GenericParam, Item, PathArguments, PathSegment, Type, TypeParamBound,
+    WherePredicate,
 };
 
 pub struct ReplaceGenericType<'a> {
@@ -187,7 +193,7 @@ fn search_trait_bound(
             // match Future<Output=Type>
             if let PathArguments::AngleBracketed(args) = &segment.arguments {
                 // binding: Output=Type
-                if let GenericArgument::Binding(binding) = &args.args[0] {
+                if let GenericArgumentBinding(binding) = &args.args[0] {
                     if let Type::Path(p) = &binding.ty {
                         inputs.push((generic_type_name.to_owned(), p.path.segments[0].clone()));
                     }

@@ -1,3 +1,5 @@
+#![cfg(feature = "legacy-syntax")]
+
 use maybe_async::maybe_async;
 
 #[maybe_async]

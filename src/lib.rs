@@ -139,6 +139,7 @@
 //!     #    true
 //!     # }
 //!
+//!     ##[cfg(feature = "legacy-syntax")]
 //!     ##[maybe_async::test(
 //!         feature="is_sync",
 //!         async(
@@ -281,14 +282,23 @@
 //! # License
 //! MIT
 
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+
 extern crate proc_macro;
+
+#[cfg(feature = "syn-1")]
+use syn_1::{
+    self as syn, spanned::Spanned, AttributeArgs, ImplItem::Method as ImplItemMethod, Lit, Meta,
+    NestedMeta, TraitItem::Method as TraitItemMethod,
+};
+
+#[cfg(feature = "syn-2")]
+use syn_2::{self as syn, ImplItem::Fn as ImplItemMethod, TraitItem::Fn as TraitItemMethod};
 
 use proc_macro::TokenStream;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use syn::{
-    parse_macro_input, spanned::Spanned, AttributeArgs, ImplItem, Lit, Meta, NestedMeta, TraitItem,
-};
+use syn::parse_macro_input;
 
 use quote::quote;
 
@@ -320,7 +330,7 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
     match input {
         Item::Impl(item) => {
             for inner in &mut item.items {
-                if let ImplItem::Method(ref mut method) = inner {
+                if let ImplItemMethod(ref mut method) = inner {
                     if method.sig.asyncness.is_some() {
                         method.sig.asyncness = None;
                     }
@@ -330,7 +340,7 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
         }
         Item::Trait(item) => {
             for inner in &mut item.items {
-                if let TraitItem::Method(ref mut method) = inner {
+                if let TraitItemMethod(ref mut method) = inner {
                     if method.sig.asyncness.is_some() {
                         method.sig.asyncness = None;
                     }
@@ -437,6 +447,7 @@ pub fn async_impl(args: TokenStream, _input: TokenStream) -> TokenStream {
     token.into()
 }
 
+#[cfg(feature = "legacy-syntax")]
 macro_rules! match_nested_meta_to_str_lit {
     ($t:expr) => {
         match $t {
@@ -531,6 +542,8 @@ macro_rules! match_nested_meta_to_str_lit {
 ///     assert_eq!(res, true);
 /// }
 /// ```
+#[cfg_attr(doc_cfg, doc(cfg(feature = "legacy-syntax")))]
+#[cfg(feature = "legacy-syntax")]
 #[proc_macro_attribute]
 pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
     let attr_args = parse_macro_input!(args as AttributeArgs);
