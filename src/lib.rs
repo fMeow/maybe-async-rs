@@ -287,7 +287,10 @@ use proc_macro::TokenStream;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use syn::{
-    parse_macro_input, spanned::Spanned, AttributeArgs, ImplItem, Lit, Meta, NestedMeta, TraitItem,
+    ext::IdentExt,
+    parenthesized,
+    parse::{ParseStream, Parser},
+    parse_macro_input, token, Ident, ImplItem, LitStr, Meta, Result, Token, TraitItem,
 };
 
 use quote::quote;
@@ -313,14 +316,13 @@ fn convert_async(input: &mut Item, send: bool) -> TokenStream2 {
             Item::Static(item) => quote!(#item),
         }
     }
-    .into()
 }
 
 fn convert_sync(input: &mut Item) -> TokenStream2 {
     match input {
         Item::Impl(item) => {
             for inner in &mut item.items {
-                if let ImplItem::Method(ref mut method) = inner {
+                if let ImplItem::Fn(ref mut method) = inner {
                     if method.sig.asyncness.is_some() {
                         method.sig.asyncness = None;
                     }
@@ -330,7 +332,7 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
         }
         Item::Trait(item) => {
             for inner in &mut item.items {
-                if let TraitItem::Method(ref mut method) = inner {
+                if let TraitItem::Fn(ref mut method) = inner {
                     if method.sig.asyncness.is_some() {
                         method.sig.asyncness = None;
                     }
@@ -346,7 +348,6 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
         }
         Item::Static(item) => AsyncAwaitRemoval.remove_async_await(quote!(#item)),
     }
-    .into()
 }
 
 /// maybe_async attribute macro
@@ -437,22 +438,14 @@ pub fn async_impl(args: TokenStream, _input: TokenStream) -> TokenStream {
     token.into()
 }
 
-macro_rules! match_nested_meta_to_str_lit {
-    ($t:expr) => {
-        match $t {
-            NestedMeta::Lit(lit) => {
-                match lit {
-                    Lit::Str(s) => {
-                        s.value().parse::<TokenStream2>().unwrap()
-                    }
-                    _ => {
-                        return syn::Error::new(lit.span(), "expected meta or string literal").to_compile_error().into();
-                    }
-                }
-            }
-            NestedMeta::Meta(meta) => quote!(#meta)
-        }
-    };
+fn parse_nested_meta_or_str(input: ParseStream) -> Result<TokenStream2> {
+    if let Some(s) = input.parse::<Option<LitStr>>()? {
+        let tokens = s.value().parse()?;
+        Ok(tokens)
+    } else {
+        let meta: Meta = input.parse()?;
+        Ok(quote!(#meta))
+    }
 }
 
 /// Handy macro to unify test code of sync and async code
@@ -533,80 +526,75 @@ macro_rules! match_nested_meta_to_str_lit {
 /// ```
 #[proc_macro_attribute]
 pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
-    let attr_args = parse_macro_input!(args as AttributeArgs);
-    let input = TokenStream2::from(input);
-    if attr_args.len() < 1 {
-        return syn::Error::new(
+    match parse_test_cfg.parse(args) {
+        Ok(test_cfg) => [test_cfg.into(), input].into_iter().collect(),
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+fn parse_test_cfg(input: ParseStream) -> Result<TokenStream2> {
+    if input.is_empty() {
+        return Err(syn::Error::new(
             Span::call_site(),
             "Arguments cannot be empty, at least specify the condition for sync code",
-        )
-        .to_compile_error()
-        .into();
+        ));
     }
 
     // The first attributes indicates sync condition
-    let sync_cond = match_nested_meta_to_str_lit!(attr_args.first().unwrap());
+    let sync_cond = input.call(parse_nested_meta_or_str)?;
     let mut ts = quote!(#[cfg_attr(#sync_cond, maybe_async::must_be_sync, test)]);
 
     // The rest attributes indicates async condition and async test macro
     // only accepts in the forms of `async(cond, test_macro)`, but `cond` and
     // `test_macro` can be either meta attributes or string literal
-    let mut async_token = Vec::new();
     let mut async_conditions = Vec::new();
-    for async_meta in attr_args.into_iter().skip(1) {
-        match async_meta {
-            NestedMeta::Meta(meta) => match meta {
-                Meta::List(list) => {
-                    let name = list.path.segments[0].ident.to_string();
-                    if name.ne("async") {
-                        return syn::Error::new(
-                            list.path.span(),
-                            format!("Unknown path: `{}`, must be `async`", name),
-                        )
-                        .to_compile_error()
-                        .into();
-                    }
-                    if list.nested.len() == 2 {
-                        let async_cond =
-                            match_nested_meta_to_str_lit!(list.nested.first().unwrap());
-                        let async_test = match_nested_meta_to_str_lit!(list.nested.last().unwrap());
-                        let attr = quote!(
-                            #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test)]
-                        );
-                        async_conditions.push(async_cond);
-                        async_token.push(attr);
-                    } else {
-                        let msg = format!(
-                            "Must pass two metas or string literals like `async(condition, \
-                             async_test_macro)`, you passed {} metas.",
-                            list.nested.len()
-                        );
-                        return syn::Error::new(list.span(), msg).to_compile_error().into();
-                    }
-                }
-                _ => {
-                    return syn::Error::new(
-                        meta.span(),
-                        "Must be list of metas like: `async(condition, async_test_macro)`",
-                    )
-                    .to_compile_error()
-                    .into();
-                }
-            },
-            NestedMeta::Lit(lit) => {
-                return syn::Error::new(
-                    lit.span(),
-                    "Must be list of metas like: `async(condition, async_test_macro)`",
-                )
-                .to_compile_error()
-                .into();
-            }
+    while !input.is_empty() {
+        input.parse::<Token![,]>()?;
+        if input.is_empty() {
+            break;
+        }
+
+        if !input.peek(Ident::peek_any) {
+            return Err(
+                input.error("Must be list of metas like: `async(condition, async_test_macro)`")
+            );
+        }
+        let name = input.call(Ident::parse_any)?;
+        if name != "async" {
+            return Err(syn::Error::new(
+                name.span(),
+                format!("Unknown path: `{}`, must be `async`", name),
+            ));
+        }
+
+        if !input.peek(token::Paren) {
+            return Err(
+                input.error("Must be list of metas like: `async(condition, async_test_macro)`")
+            );
+        }
+
+        let nested;
+        parenthesized!(nested in input);
+        let list = nested.parse_terminated(parse_nested_meta_or_str, Token![,])?;
+        let len = list.len();
+        let mut iter = list.into_iter();
+        let (Some(async_cond), Some(async_test), None) = (iter.next(), iter.next(), iter.next())
+        else {
+            let msg = format!(
+                "Must pass two metas or string literals like `async(condition, \
+                 async_test_macro)`, you passed {len} metas.",
+            );
+            return Err(syn::Error::new(name.span(), msg));
         };
+
+        let attr = quote!(
+            #[cfg_attr(#async_cond, maybe_async::must_be_async, #async_test)]
+        );
+        async_conditions.push(async_cond);
+        ts.extend(attr);
     }
 
-    async_token.into_iter().for_each(|t| ts.extend(t));
-    ts.extend(quote!( #input ));
-    if !async_conditions.is_empty() {
+    Ok(if !async_conditions.is_empty() {
         quote! {
             #[cfg(any(#sync_cond, #(#async_conditions),*))]
             #ts
@@ -616,6 +604,5 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
             #[cfg(#sync_cond)]
             #ts
         }
-    }
-    .into()
+    })
 }
