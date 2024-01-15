@@ -2,7 +2,7 @@
 name = "maybe-async"
 version = "0.2.7"
 authors = [ "Guoli Lyu <guoli-lv@hotmail.com>" ]
-edition = "2018"
+edition = "2021"
 readme = "README.md"
 license = "MIT"
 description = "A procedure macro to unify SYNC and ASYNC implementation"
@@ -15,7 +15,7 @@ proc-macro2 = "1.0"
 quote = "1.0"
 
   [dependencies.syn]
-  version = "1.0"
+  version = "2.0"
   features = [ "visit-mut", "full" ]
 
 [lib]

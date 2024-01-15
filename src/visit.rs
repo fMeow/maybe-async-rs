@@ -1,13 +1,9 @@
-use std::iter::FromIterator;
-
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    parse_quote,
-    punctuated::Punctuated,
     visit_mut::{self, visit_item_mut, visit_path_segment_mut, VisitMut},
-    Expr, ExprBlock, File, GenericArgument, GenericParam, Item, PathArguments, PathSegment, Type,
-    TypeParamBound, WherePredicate,
+    Expr, ExprBlock, File, GenericArgument, GenericParam, Item, PathArguments, PathSegment, Stmt,
+    Type, TypeParamBound, WherePredicate,
 };
 
 pub struct ReplaceGenericType<'a> {
@@ -50,8 +46,7 @@ impl<'a> VisitMut for ReplaceGenericType<'a> {
                     }
                 })
                 .collect::<Vec<_>>();
-            item_fn.sig.generics.params =
-                Punctuated::from_iter(args.into_iter().map(|p| p.clone()).collect::<Vec<_>>());
+            item_fn.sig.generics.params = args.into_iter().cloned().collect();
 
             // remove generic type from where clause
             if let Some(where_clause) = &mut item_fn.sig.generics.where_clause {
@@ -75,12 +70,7 @@ impl<'a> VisitMut for ReplaceGenericType<'a> {
                     })
                     .collect::<Vec<_>>();
 
-                where_clause.predicates = Punctuated::from_iter(
-                    new_where_clause
-                        .into_iter()
-                        .map(|c| c.clone())
-                        .collect::<Vec<_>>(),
-                );
+                where_clause.predicates = new_where_clause.into_iter().cloned().collect();
             };
         }
         visit_item_mut(self, i)
@@ -114,11 +104,9 @@ impl VisitMut for AsyncAwaitRemoval {
 
             Expr::Async(expr) => {
                 let inner = &expr.block;
-                let sync_expr = if inner.stmts.len() == 1 {
+                let sync_expr = if let [Stmt::Expr(expr, None)] = inner.stmts.as_slice() {
                     // remove useless braces when there is only one statement
-                    let stmt = &inner.stmts.get(0).unwrap();
-                    // convert statement to Expr
-                    parse_quote!(#stmt)
+                    expr.clone()
                 } else {
                     Expr::Block(ExprBlock {
                         attrs: expr.attrs.clone(),
@@ -187,7 +175,7 @@ fn search_trait_bound(
             // match Future<Output=Type>
             if let PathArguments::AngleBracketed(args) = &segment.arguments {
                 // binding: Output=Type
-                if let GenericArgument::Binding(binding) = &args.args[0] {
+                if let GenericArgument::AssocType(binding) = &args.args[0] {
                     if let Type::Path(p) = &binding.ty {
                         inputs.push((generic_type_name.to_owned(), p.path.segments[0].clone()));
                     }
