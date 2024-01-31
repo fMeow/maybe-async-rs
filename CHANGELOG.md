@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.9](https://github.com/fMeow/maybe-async-rs/compare/v0.2.8...v0.2.9) (2024-01-31)
+
+
+### Features
+
+* support `async fn` in traits ([282eb76](https://github.com/fMeow/maybe-async-rs/commit/282eb76c0be0433ade8d0a2a11646e09db2f37b7))
+
 ### [0.2.8](https://github.com/fMeow/maybe-async-rs/compare/v0.2.7...v0.2.8) (2024-01-30)
 
 ### [0.2.7](https://github.com/fMeow/maybe-async-rs/compare/v0.2.6...v0.2.7) (2023-02-01)
