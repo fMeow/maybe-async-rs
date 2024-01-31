@@ -1,4 +1,6 @@
-# Maybe-Async Procedure Macro
+![Maintenance](https://img.shields.io/badge/maintenance-activly--developed-brightgreen.svg)
+
+# maybe-async
 
 **Why bother writing similar code twice for blocking and async code?**
 
@@ -24,16 +26,16 @@ those `async` and `await` when you need a blocking code.
 
 These procedural macros can be applied to the following codes:
 - trait item declaration
-- trait implmentation
+- trait implementation
 - function definition
 - struct definition
 
 **RECOMMENDATION**: Enable **resolver ver2** in your crate, which is
 introduced in Rust 1.51. If not, two crates in dependency with conflict
-version (one async and another blocking) can fail complilation.
+version (one async and another blocking) can fail compilation.
 
 
-## Motivation
+### Motivation
 
 The async/await language feature alters the async world of rust.
 Comparing with the map/and_then style, now the async code really resembles
@@ -42,9 +44,9 @@ sync version code.
 In many crates, the async and sync version of crates shares the same API,
 but the minor difference that all async code must be awaited prevent the
 unification of async and sync code. In other words, we are forced to write
-an async and an sync implementation repectively.
+an async and a sync implementation respectively.
 
-## Macros in Detail
+### Macros in Detail
 
 `maybe-async` offers 4 set of attribute macros: `maybe_async`,
 `sync_impl`/`async_impl`, `must_be_sync`/`must_be_async`,  and `test`.
@@ -71,7 +73,7 @@ blocking code except for async/await keywords. And use feature gate
     maybe_async = "0.2"
     ```
 
-    Wanna convert async code to sync? Add `maybe_async` to dependencies with
+    Want to convert async code to sync? Add `maybe_async` to dependencies with
     an `is_sync` feature gate. In this way, `maybe_async` is the same as
     `must_be_sync`:
 
@@ -80,19 +82,31 @@ blocking code except for async/await keywords. And use feature gate
     maybe_async = { version = "0.2", features = ["is_sync"] }
     ```
 
-    Not all async traits need futures that are `dyn Future + Send`.
-    To avoid having "Send" and "Sync" bounds placed on the async trait
-    methods, invoke the maybe_async macro as #[maybe_async(?Send)] on both
-    the trait and the impl blocks.
+    There are three usage variants for `maybe_async` attribute macros:
+    - `#[maybe_async]` or `#[maybe_async(Send)]`
 
+       In this mode, `#[async_trait::async_trait]` is added to trait declarations and trait implementations
+       to support async fn in traits.
+
+    - `#[maybe_async(?Send)]`
+
+       Not all async traits need futures that are `dyn Future + Send`.
+       In this mode, `#[async_trait::async_trait(?Send)]` is added to trait declarations and trait implementations,
+       to avoid having "Send" and "Sync" bounds placed on the async trait
+       methods.
+
+    - `#[maybe_async(AFIT)]`
+
+       AFIT is acronym for **a**sync **f**unction **i**n **t**rait, stabilized from rust 1.74
 
 - `must_be_async`
 
-    **Keep async**. Add `async_trait` attribute macro for trait declaration
-    or implementation to bring async fn support in traits.
+    **Keep async**.
 
-    To avoid having "Send" and "Sync" bounds placed on the async trait
-    methods, invoke the maybe_async macro as #[must_be_async(?Send)].
+    There are three usage variants for `must_be_async` attribute macros:
+    - `#[must_be_async]` or `#[must_be_async(Send)]`
+    - `#[must_be_async(?Send)]`
+    - `#[must_be_async(AFIT)]`
 
 - `must_be_sync`
 
@@ -102,25 +116,26 @@ blocking code except for async/await keywords. And use feature gate
 
 - `sync_impl`
 
-    An sync implementation should on compile on blocking implementation and
-must     simply disappear when we want async version.
+    A sync implementation should compile on blocking implementation and
+    must simply disappear when we want async version.
 
     Although most of the API are almost the same, there definitely come to a
     point when the async and sync version should differ greatly. For
     example, a MongoDB client may use the same API for async and sync
-    verison, but the code to actually send reqeust are quite different.
+    version, but the code to actually send reqeust are quite different.
 
     Here, we can use `sync_impl` to mark a synchronous implementation, and a
-    sync implementation shoule disappear when we want async version.
+    sync implementation should disappear when we want async version.
 
 - `async_impl`
 
     An async implementation should on compile on async implementation and
-must     simply disappear when we want sync version.
+    must simply disappear when we want sync version.
 
-    To avoid having "Send" and "Sync" bounds placed on the async trait
-    methods, invoke the maybe_async macro as #[async_impl(?Send)].
-
+    There are three usage variants for `async_impl` attribute macros:
+    - `#[async_impl]` or `#[async_impl(Send)]`
+    - `#[async_impl(?Send)]`
+    - `#[async_impl(AFIT)]`
 
 - `test`
 
@@ -128,15 +143,26 @@ must     simply disappear when we want sync version.
 
     You can specify the condition to compile to sync test code
     and also the conditions to compile to async test code with given test
-    macro, e.x. `tokio::test`, `async_std::test` and etc. When only sync
+    macro, e.x. `tokio::test`, `async_std::test`, etc. When only sync
     condition is specified,the test code only compiles when sync condition
     is met.
 
     ```rust
-    #[maybe_async::test(
+    # #[maybe_async::maybe_async]
+    # async fn async_fn() -> bool {
+    #    true
+    # }
+
+    ##[maybe_async::test(
         feature="is_sync",
-        async(all(not(feature="is_sync"), feature="async_std"), async_std::test),
-        async(all(not(feature="is_sync"), feature="tokio"), tokio::test)
+        async(
+            all(not(feature="is_sync"), feature="async_std"),
+            async_std::test
+        ),
+        async(
+            all(not(feature="is_sync"), feature="tokio"),
+            tokio::test
+        )
     )]
     async fn test_async_fn() {
         let res = async_fn().await;
@@ -144,14 +170,14 @@ must     simply disappear when we want sync version.
     }
     ```
 
-## What's Under the Hook
+### What's Under the Hook
 
 `maybe-async` compiles your code in different way with the `is_sync` feature
-gate. It remove all `await` and `async` keywords in your code under
+gate. It removes all `await` and `async` keywords in your code under
 `maybe_async` macro and conditionally compiles codes under `async_impl` and
 `sync_impl`.
 
-Here is an detailed example on what's going on whe the `is_sync` feature
+Here is a detailed example on what's going on whe the `is_sync` feature
 gate set or not.
 
 ```rust
@@ -252,13 +278,13 @@ fn maybe_async_fn() -> Result<(), ()> {
 }
 ```
 
-## Examples
+### Examples
 
-### rust client for services
+#### rust client for services
 
 When implementing rust client for any services, like awz3. The higher level
 API of async and sync version is almost the same, such as creating or
-deleting a bucket, retrieving an object and etc.
+deleting a bucket, retrieving an object, etc.
 
 The example `service_client` is a proof of concept that `maybe_async` can
 actually free us from writing almost the same code for sync and async. We
@@ -266,5 +292,7 @@ can toggle between a sync AWZ3 client and async one by `is_sync` feature
 gate when we add `maybe-async` to dependency.
 
 
-# License
+## License
 MIT
+
+License: MIT

@@ -35,6 +35,17 @@ pub(crate) trait PubCrateTrait {
     }
 }
 
+#[maybe_async(AFIT)]
+trait AfitTrait {
+    fn sync_fn_afit() {}
+
+    async fn declare_async_afit(&self);
+
+    async fn async_fn_afit(&self) {
+        self.declare_async_afit().await
+    }
+}
+
 #[maybe_async]
 async fn async_fn() {}
 
@@ -60,11 +71,24 @@ impl Trait for Struct {
     }
 }
 
+#[maybe_async(AFIT)]
+impl AfitTrait for Struct {
+    fn sync_fn_afit() {}
+
+    async fn declare_async_afit(&self) {}
+
+    async fn async_fn_afit(&self) {
+        async { self.declare_async_afit().await }.await
+    }
+}
+
 #[cfg(feature = "is_sync")]
 fn main() -> std::result::Result<(), ()> {
     let s = Struct;
     s.declare_async();
     s.async_fn();
+    s.declare_async_afit();
+    s.async_fn_afit();
     async_fn();
     pub_async_fn();
     Ok(())
@@ -76,6 +100,8 @@ async fn main() {
     let s = Struct;
     s.declare_async().await;
     s.async_fn().await;
+    s.declare_async_afit().await;
+    s.async_fn_afit().await;
     async_fn().await;
     pub_async_fn().await;
 }

@@ -20,6 +20,7 @@ quote = "1.0"
 
 [lib]
 proc-macro = true
+path = "src/lib.rs"
 
 [badges.maintenance]
 status = "actively-developed"

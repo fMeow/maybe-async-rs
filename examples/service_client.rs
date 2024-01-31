@@ -9,7 +9,9 @@ type Method = String;
 
 /// InnerClient are used to actually send request,
 /// which differ a lot between sync and async.
-#[maybe_async::maybe_async]
+///
+/// Use native async function in trait
+#[maybe_async::maybe_async(AFIT)]
 trait InnerClient {
     async fn request(method: Method, url: Url, data: String) -> Response;
     #[inline]
@@ -38,7 +40,7 @@ impl InnerClient for ServiceClient {
 }
 
 /// Asynchronous implementation, only compiles when `is_sync` feature is off.
-#[maybe_async::async_impl]
+#[maybe_async::async_impl(AFIT)]
 impl InnerClient for ServiceClient {
     async fn request(method: Method, url: Url, data: String) -> Response {
         // your implementation for async, like use `reqwest::client`

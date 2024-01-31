@@ -1,6 +1,3 @@
-//!
-//! # Maybe-Async Procedure Macro
-//!
 //! **Why bother writing similar code twice for blocking and async code?**
 //!
 //! [![Build Status](https://github.com/fMeow/maybe-async-rs/workflows/CI%20%28Linux%29/badge.svg?branch=main)](https://github.com/fMeow/maybe-async-rs/actions)
@@ -25,13 +22,13 @@
 //!
 //! These procedural macros can be applied to the following codes:
 //! - trait item declaration
-//! - trait implmentation
+//! - trait implementation
 //! - function definition
 //! - struct definition
 //!
 //! **RECOMMENDATION**: Enable **resolver ver2** in your crate, which is
 //! introduced in Rust 1.51. If not, two crates in dependency with conflict
-//! version (one async and another blocking) can fail complilation.
+//! version (one async and another blocking) can fail compilation.
 //!
 //!
 //! ## Motivation
@@ -43,7 +40,7 @@
 //! In many crates, the async and sync version of crates shares the same API,
 //! but the minor difference that all async code must be awaited prevent the
 //! unification of async and sync code. In other words, we are forced to write
-//! an async and an sync implementation repectively.
+//! an async and a sync implementation respectively.
 //!
 //! ## Macros in Detail
 //!
@@ -72,7 +69,7 @@
 //!     maybe_async = "0.2"
 //!     ```
 //!
-//!     Wanna convert async code to sync? Add `maybe_async` to dependencies with
+//!     Want to convert async code to sync? Add `maybe_async` to dependencies with
 //!     an `is_sync` feature gate. In this way, `maybe_async` is the same as
 //!     `must_be_sync`:
 //!
@@ -81,19 +78,31 @@
 //!     maybe_async = { version = "0.2", features = ["is_sync"] }
 //!     ```
 //!
-//!     Not all async traits need futures that are `dyn Future + Send`.
-//!     To avoid having "Send" and "Sync" bounds placed on the async trait
-//!     methods, invoke the maybe_async macro as #[maybe_async(?Send)] on both
-//!     the trait and the impl blocks.
+//!     There are three usage variants for `maybe_async` attribute macros:
+//!     - `#[maybe_async]` or `#[maybe_async(Send)]`
 //!
+//!        In this mode, `#[async_trait::async_trait]` is added to trait declarations and trait implementations
+//!        to support async fn in traits.
+//!
+//!     - `#[maybe_async(?Send)]`
+//!
+//!        Not all async traits need futures that are `dyn Future + Send`.
+//!        In this mode, `#[async_trait::async_trait(?Send)]` is added to trait declarations and trait implementations,
+//!        to avoid having "Send" and "Sync" bounds placed on the async trait
+//!        methods.
+//!
+//!     - `#[maybe_async(AFIT)]`
+//!
+//!        AFIT is acronym for **a**sync **f**unction **i**n **t**rait, stabilized from rust 1.74
 //!
 //! - `must_be_async`
 //!
-//!     **Keep async**. Add `async_trait` attribute macro for trait declaration
-//!     or implementation to bring async fn support in traits.
+//!     **Keep async**.
 //!
-//!     To avoid having "Send" and "Sync" bounds placed on the async trait
-//!     methods, invoke the maybe_async macro as #[must_be_async(?Send)].
+//!     There are three usage variants for `must_be_async` attribute macros:
+//!     - `#[must_be_async]` or `#[must_be_async(Send)]`
+//!     - `#[must_be_async(?Send)]`
+//!     - `#[must_be_async(AFIT)]`
 //!
 //! - `must_be_sync`
 //!
@@ -103,25 +112,26 @@
 //!
 //! - `sync_impl`
 //!
-//!     An sync implementation should on compile on blocking implementation and
-//! must     simply disappear when we want async version.
+//!     A sync implementation should compile on blocking implementation and
+//!     must simply disappear when we want async version.
 //!
 //!     Although most of the API are almost the same, there definitely come to a
 //!     point when the async and sync version should differ greatly. For
 //!     example, a MongoDB client may use the same API for async and sync
-//!     verison, but the code to actually send reqeust are quite different.
+//!     version, but the code to actually send reqeust are quite different.
 //!
 //!     Here, we can use `sync_impl` to mark a synchronous implementation, and a
-//!     sync implementation shoule disappear when we want async version.
+//!     sync implementation should disappear when we want async version.
 //!
 //! - `async_impl`
 //!
 //!     An async implementation should on compile on async implementation and
-//! must     simply disappear when we want sync version.
+//!     must simply disappear when we want sync version.
 //!
-//!     To avoid having "Send" and "Sync" bounds placed on the async trait
-//!     methods, invoke the maybe_async macro as #[async_impl(?Send)].
-//!
+//!     There are three usage variants for `async_impl` attribute macros:
+//!     - `#[async_impl]` or `#[async_impl(Send)]`
+//!     - `#[async_impl(?Send)]`
+//!     - `#[async_impl(AFIT)]`
 //!
 //! - `test`
 //!
@@ -129,7 +139,7 @@
 //!
 //!     You can specify the condition to compile to sync test code
 //!     and also the conditions to compile to async test code with given test
-//!     macro, e.x. `tokio::test`, `async_std::test` and etc. When only sync
+//!     macro, e.x. `tokio::test`, `async_std::test`, etc. When only sync
 //!     condition is specified,the test code only compiles when sync condition
 //!     is met.
 //!
@@ -159,11 +169,11 @@
 //! ## What's Under the Hook
 //!
 //! `maybe-async` compiles your code in different way with the `is_sync` feature
-//! gate. It remove all `await` and `async` keywords in your code under
+//! gate. It removes all `await` and `async` keywords in your code under
 //! `maybe_async` macro and conditionally compiles codes under `async_impl` and
 //! `sync_impl`.
 //!
-//! Here is an detailed example on what's going on whe the `is_sync` feature
+//! Here is a detailed example on what's going on whe the `is_sync` feature
 //! gate set or not.
 //!
 //! ```rust
@@ -270,7 +280,7 @@
 //!
 //! When implementing rust client for any services, like awz3. The higher level
 //! API of async and sync version is almost the same, such as creating or
-//! deleting a bucket, retrieving an object and etc.
+//! deleting a bucket, retrieving an object, etc.
 //!
 //! The example `service_client` is a proof of concept that `maybe_async` can
 //! actually free us from writing almost the same code for sync and async. We
@@ -299,22 +309,26 @@ use crate::{parse::Item, visit::AsyncAwaitRemoval};
 
 mod parse;
 mod visit;
+enum AsyncTraitMode {
+    Send,
+    NotSend,
+    Off,
+}
 
-fn convert_async(input: &mut Item, send: bool) -> TokenStream2 {
-    if send {
-        match input {
-            Item::Impl(item) => quote!(#[async_trait::async_trait]#item),
-            Item::Trait(item) => quote!(#[async_trait::async_trait]#item),
-            Item::Fn(item) => quote!(#item),
-            Item::Static(item) => quote!(#item),
-        }
-    } else {
-        match input {
-            Item::Impl(item) => quote!(#[async_trait::async_trait(?Send)]#item),
-            Item::Trait(item) => quote!(#[async_trait::async_trait(?Send)]#item),
-            Item::Fn(item) => quote!(#item),
-            Item::Static(item) => quote!(#item),
-        }
+fn convert_async(input: &mut Item, async_trait_mode: AsyncTraitMode) -> TokenStream2 {
+    match input {
+        Item::Trait(item) => match async_trait_mode {
+            AsyncTraitMode::Send => quote!(#[async_trait::async_trait]#item),
+            AsyncTraitMode::NotSend => quote!(#[async_trait::async_trait(?Send)]#item),
+            AsyncTraitMode::Off => quote!(#item),
+        },
+        Item::Impl(item) => match async_trait_mode {
+            AsyncTraitMode::Send => quote!(#[async_trait::async_trait]#item),
+            AsyncTraitMode::NotSend => quote!(#[async_trait::async_trait(?Send)]#item),
+            AsyncTraitMode::Off => quote!(#item),
+        },
+        Item::Fn(item) => quote!(#item),
+        Item::Static(item) => quote!(#item),
     }
 }
 
@@ -350,27 +364,35 @@ fn convert_sync(input: &mut Item) -> TokenStream2 {
     }
 }
 
+fn async_mode(arg: &str) -> Result<AsyncTraitMode> {
+    match arg {
+        "" | "Send" => Ok(AsyncTraitMode::Send),
+        "?Send" => Ok(AsyncTraitMode::NotSend),
+        // acronym for Async Function in Trait,
+        // TODO make AFIT as default in future release
+        "AFIT" => Ok(AsyncTraitMode::Off),
+        _ => Err(syn::Error::new(
+            Span::call_site(),
+            "Only accepts `Send`, `?Send` or `AFIT` (native async function in trait)",
+        )),
+    }
+}
+
 /// maybe_async attribute macro
 ///
 /// Can be applied to trait item, trait impl, functions and struct impls.
 #[proc_macro_attribute]
 pub fn maybe_async(args: TokenStream, input: TokenStream) -> TokenStream {
-    let send = match args.to_string().replace(" ", "").as_str() {
-        "" | "Send" => true,
-        "?Send" => false,
-        _ => {
-            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
-                .to_compile_error()
-                .into();
-        }
+    let mode = match async_mode(args.to_string().replace(" ", "").as_str()) {
+        Ok(m) => m,
+        Err(e) => return e.to_compile_error().into(),
     };
-
     let mut item = parse_macro_input!(input as Item);
 
     let token = if cfg!(feature = "is_sync") {
         convert_sync(&mut item)
     } else {
-        convert_async(&mut item, send)
+        convert_async(&mut item, mode)
     };
     token.into()
 }
@@ -378,17 +400,12 @@ pub fn maybe_async(args: TokenStream, input: TokenStream) -> TokenStream {
 /// convert marked async code to async code with `async-trait`
 #[proc_macro_attribute]
 pub fn must_be_async(args: TokenStream, input: TokenStream) -> TokenStream {
-    let send = match args.to_string().replace(" ", "").as_str() {
-        "" | "Send" => true,
-        "?Send" => false,
-        _ => {
-            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
-                .to_compile_error()
-                .into();
-        }
+    let mode = match async_mode(args.to_string().replace(" ", "").as_str()) {
+        Ok(m) => m,
+        Err(e) => return e.to_compile_error().into(),
     };
     let mut item = parse_macro_input!(input as Item);
-    convert_async(&mut item, send).into()
+    convert_async(&mut item, mode).into()
 }
 
 /// convert marked async code to sync code
@@ -419,21 +436,15 @@ pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// When `is_sync` is set, marked code is removed.
 #[proc_macro_attribute]
 pub fn async_impl(args: TokenStream, _input: TokenStream) -> TokenStream {
-    let send = match args.to_string().replace(" ", "").as_str() {
-        "" | "Send" => true,
-        "?Send" => false,
-        _ => {
-            return syn::Error::new(Span::call_site(), "Only accepts `Send` or `?Send`")
-                .to_compile_error()
-                .into();
-        }
+    let mode = match async_mode(args.to_string().replace(" ", "").as_str()) {
+        Ok(m) => m,
+        Err(e) => return e.to_compile_error().into(),
     };
-
     let token = if cfg!(feature = "is_sync") {
         quote!()
     } else {
         let mut item = parse_macro_input!(_input as Item);
-        convert_async(&mut item, send)
+        convert_async(&mut item, mode)
     };
     token.into()
 }
