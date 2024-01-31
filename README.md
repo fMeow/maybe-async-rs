@@ -1,5 +1,3 @@
-![Maintenance](https://img.shields.io/badge/maintenance-activly--developed-brightgreen.svg)
-
 # maybe-async
 
 **Why bother writing similar code twice for blocking and async code?**
@@ -294,5 +292,3 @@ gate when we add `maybe-async` to dependency.
 
 ## License
 MIT
-
-License: MIT

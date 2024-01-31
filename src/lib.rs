@@ -95,6 +95,9 @@
 //!
 //!        AFIT is acronym for **a**sync **f**unction **i**n **t**rait, stabilized from rust 1.74
 //!
+//!     For compatibility reasons, the `async fn` in traits is supported via a verbose `AFIT` flag. This will become
+//!     the default mode for next major release.
+//!
 //! - `must_be_async`
 //!
 //!     **Keep async**.
@@ -177,7 +180,7 @@
 //! gate set or not.
 //!
 //! ```rust
-//! #[maybe_async::maybe_async(?Send)]
+//! #[maybe_async::maybe_async(AFIT)]
 //! trait A {
 //!     async fn async_fn_name() -> Result<(), ()> {
 //!         Ok(())
@@ -189,7 +192,7 @@
 //!
 //! struct Foo;
 //!
-//! #[maybe_async::maybe_async(?Send)]
+//! #[maybe_async::maybe_async(AFIT)]
 //! impl A for Foo {
 //!     async fn async_fn_name() -> Result<(), ()> {
 //!         Ok(())
@@ -213,7 +216,6 @@
 //!
 //! ```rust
 //! // Compiled code when `is_sync` is toggled off.
-//! #[async_trait::async_trait(?Send)]
 //! trait A {
 //!     async fn maybe_async_fn_name() -> Result<(), ()> {
 //!         Ok(())
@@ -225,7 +227,6 @@
 //!
 //! struct Foo;
 //!
-//! #[async_trait::async_trait(?Send)]
 //! impl A for Foo {
 //!     async fn maybe_async_fn_name() -> Result<(), ()> {
 //!         Ok(())
