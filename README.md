@@ -80,7 +80,7 @@ blocking code except for async/await keywords. And use feature gate
     maybe_async = { version = "0.2", features = ["is_sync"] }
     ```
 
-    There are three usage variants for `maybe_async` attribute macros:
+    There are three usage variants for `maybe_async` attribute usage:
     - `#[maybe_async]` or `#[maybe_async(Send)]`
 
        In this mode, `#[async_trait::async_trait]` is added to trait declarations and trait implementations
@@ -97,11 +97,14 @@ blocking code except for async/await keywords. And use feature gate
 
        AFIT is acronym for **a**sync **f**unction **i**n **t**rait, stabilized from rust 1.74
 
+    For compatibility reasons, the `async fn` in traits is supported via a verbose `AFIT` flag. This will become
+    the default mode for the next major release.
+
 - `must_be_async`
 
     **Keep async**.
 
-    There are three usage variants for `must_be_async` attribute macros:
+    There are three usage variants for `must_be_async` attribute usage:
     - `#[must_be_async]` or `#[must_be_async(Send)]`
     - `#[must_be_async(?Send)]`
     - `#[must_be_async(AFIT)]`
@@ -130,7 +133,7 @@ blocking code except for async/await keywords. And use feature gate
     An async implementation should on compile on async implementation and
     must simply disappear when we want sync version.
 
-    There are three usage variants for `async_impl` attribute macros:
+    There are three usage variants for `async_impl` attribute usage:
     - `#[async_impl]` or `#[async_impl(Send)]`
     - `#[async_impl(?Send)]`
     - `#[async_impl(AFIT)]`
@@ -179,7 +182,7 @@ Here is a detailed example on what's going on whe the `is_sync` feature
 gate set or not.
 
 ```rust
-#[maybe_async::maybe_async(?Send)]
+#[maybe_async::maybe_async(AFIT)]
 trait A {
     async fn async_fn_name() -> Result<(), ()> {
         Ok(())
@@ -191,7 +194,7 @@ trait A {
 
 struct Foo;
 
-#[maybe_async::maybe_async(?Send)]
+#[maybe_async::maybe_async(AFIT)]
 impl A for Foo {
     async fn async_fn_name() -> Result<(), ()> {
         Ok(())
@@ -215,7 +218,6 @@ is async code:
 
 ```rust
 // Compiled code when `is_sync` is toggled off.
-#[async_trait::async_trait(?Send)]
 trait A {
     async fn maybe_async_fn_name() -> Result<(), ()> {
         Ok(())
@@ -227,7 +229,6 @@ trait A {
 
 struct Foo;
 
-#[async_trait::async_trait(?Send)]
 impl A for Foo {
     async fn maybe_async_fn_name() -> Result<(), ()> {
         Ok(())

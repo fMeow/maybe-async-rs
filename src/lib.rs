@@ -78,7 +78,7 @@
 //!     maybe_async = { version = "0.2", features = ["is_sync"] }
 //!     ```
 //!
-//!     There are three usage variants for `maybe_async` attribute macros:
+//!     There are three usage variants for `maybe_async` attribute usage:
 //!     - `#[maybe_async]` or `#[maybe_async(Send)]`
 //!
 //!        In this mode, `#[async_trait::async_trait]` is added to trait declarations and trait implementations
@@ -96,13 +96,13 @@
 //!        AFIT is acronym for **a**sync **f**unction **i**n **t**rait, stabilized from rust 1.74
 //!
 //!     For compatibility reasons, the `async fn` in traits is supported via a verbose `AFIT` flag. This will become
-//!     the default mode for next major release.
+//!     the default mode for the next major release.
 //!
 //! - `must_be_async`
 //!
 //!     **Keep async**.
 //!
-//!     There are three usage variants for `must_be_async` attribute macros:
+//!     There are three usage variants for `must_be_async` attribute usage:
 //!     - `#[must_be_async]` or `#[must_be_async(Send)]`
 //!     - `#[must_be_async(?Send)]`
 //!     - `#[must_be_async(AFIT)]`
@@ -131,7 +131,7 @@
 //!     An async implementation should on compile on async implementation and
 //!     must simply disappear when we want sync version.
 //!
-//!     There are three usage variants for `async_impl` attribute macros:
+//!     There are three usage variants for `async_impl` attribute usage:
 //!     - `#[async_impl]` or `#[async_impl(Send)]`
 //!     - `#[async_impl(?Send)]`
 //!     - `#[async_impl(AFIT)]`
