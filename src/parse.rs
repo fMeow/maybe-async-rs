@@ -23,9 +23,6 @@ impl Parse for Item {
         let attrs = input.call(Attribute::parse_outer)?;
         let mut fork;
         let item = if let Ok(mut item) = fork!(fork = input).parse::<ItemImpl>() {
-            if item.trait_.is_none() {
-                return Err(Error::new(Span::call_site(), "expected a trait impl"));
-            }
             item.attrs = attrs;
             Item::Impl(item)
         } else if let Ok(mut item) = fork!(fork = input).parse::<ItemTrait>() {
@@ -38,10 +35,7 @@ impl Parse for Item {
             item.attrs = attrs;
             Item::Static(item)
         } else {
-            return Err(Error::new(
-                Span::call_site(),
-                "expected trait impl, trait or fn",
-            ));
+            return Err(Error::new(Span::call_site(), "expected impl, trait or fn"));
         };
         input.advance_to(&fork);
         Ok(item)

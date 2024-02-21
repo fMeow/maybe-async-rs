@@ -73,6 +73,18 @@ struct Struct;
 
 #[cfg(not(feature = "is_sync"))]
 #[maybe_async::must_be_async]
+impl Struct {
+    fn sync_fn_inherent() {}
+
+    async fn declare_async_inherent(&self) {}
+
+    async fn async_fn_inherent(&self) {
+        async { self.declare_async_inherent().await }.await
+    }
+}
+
+#[cfg(not(feature = "is_sync"))]
+#[maybe_async::must_be_async]
 impl Trait for Struct {
     fn sync_fn() {}
 
@@ -111,6 +123,8 @@ fn main() {}
 #[async_std::main]
 async fn main() {
     let s = Struct;
+    s.declare_async_inherent().await;
+    s.async_fn_inherent().await;
     s.declare_async().await;
     s.async_fn().await;
     s.declare_async_afit().await;
