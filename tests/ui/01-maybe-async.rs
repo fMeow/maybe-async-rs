@@ -61,6 +61,17 @@ unsafe fn unsafe_fn() {}
 struct Struct;
 
 #[maybe_async]
+impl Struct {
+    fn sync_fn_inherent() {}
+
+    async fn declare_async_inherent(&self) {}
+
+    async fn async_fn_inherent(&self) {
+        async { self.declare_async_inherent().await }.await
+    }
+}
+
+#[maybe_async]
 impl Trait for Struct {
     fn sync_fn() {}
 
@@ -85,6 +96,8 @@ impl AfitTrait for Struct {
 #[cfg(feature = "is_sync")]
 fn main() -> std::result::Result<(), ()> {
     let s = Struct;
+    s.declare_async_inherent();
+    s.async_fn_inherent();
     s.declare_async();
     s.async_fn();
     s.declare_async_afit();
@@ -98,6 +111,8 @@ fn main() -> std::result::Result<(), ()> {
 #[async_std::main]
 async fn main() {
     let s = Struct;
+    s.declare_async_inherent().await;
+    s.async_fn_inherent().await;
     s.declare_async().await;
     s.async_fn().await;
     s.declare_async_afit().await;
