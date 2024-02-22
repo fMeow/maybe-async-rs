@@ -1,6 +1,6 @@
 [package]
 name = "maybe-async"
-version = "0.2.9"
+version = "0.2.10"
 authors = [ "Guoli Lyu <guoli-lv@hotmail.com>" ]
 edition = "2021"
 readme = "README.md"
