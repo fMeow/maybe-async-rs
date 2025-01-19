@@ -15,6 +15,8 @@
 //! those `async` and `await` when you need a blocking code.
 //! - Switch between sync and async by toggling `is_sync` feature gate in
 //!   `Cargo.toml`.
+//! - Alternatively activating the `default_sync` feature will switch to sync by
+//!   default and can be switched to async via `is_async`.
 //! - use `must_be_async` and `must_be_sync` to keep code in specified version
 //! - use `async_impl` and `sync_impl` to only compile code block on specified
 //!   version
@@ -396,7 +398,7 @@ pub fn maybe_async(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     let mut item = parse_macro_input!(input as Item);
 
-    let token = if cfg!(feature = "is_sync") {
+    let token = if is_sync() {
         convert_sync(&mut item)
     } else {
         convert_async(&mut item, mode)
@@ -429,11 +431,7 @@ pub fn must_be_sync(_args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn sync_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = TokenStream2::from(input);
-    let token = if cfg!(feature = "is_sync") {
-        quote!(#input)
-    } else {
-        quote!()
-    };
+    let token = if is_sync() { quote!(#input) } else { quote!() };
     token.into()
 }
 
@@ -447,7 +445,7 @@ pub fn async_impl(args: TokenStream, _input: TokenStream) -> TokenStream {
         Ok(m) => m,
         Err(e) => return e.to_compile_error().into(),
     };
-    let token = if cfg!(feature = "is_sync") {
+    let token = if is_sync() {
         quote!()
     } else {
         let mut item = parse_macro_input!(_input as Item);
@@ -464,6 +462,10 @@ fn parse_nested_meta_or_str(input: ParseStream) -> Result<TokenStream2> {
         let meta: Meta = input.parse()?;
         Ok(quote!(#meta))
     }
+}
+
+fn is_sync() -> bool {
+    cfg!(feature = "is_sync") || (cfg!(feature = "default_sync") && !cfg!(feature = "is_async"))
 }
 
 /// Handy macro to unify test code of sync and async code
