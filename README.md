@@ -95,7 +95,27 @@ blocking code except for async/await keywords. And use feature gate
 
     - `#[maybe_async(AFIT)]`
 
-       AFIT is acronym for **a**sync **f**unction **i**n **t**rait, stabilized from rust 1.74
+       AFIT is acronym for **a**sync **f**unction **i**n **t**rait, stabilized from rust 1.74.
+
+       Inside an `AFIT` trait you can write either `async fn foo(&self) -> T` or the desugared form
+       `fn foo(&self) -> impl Future<Output = T> + Send + '_`. The latter is recommended for
+       public traits to avoid the `async_fn_in_trait` warning ("use of `async fn` in public traits
+       is discouraged as auto trait bounds cannot be specified"). In sync mode, `maybe_async`
+       detects the `impl Future<Output = T> + ...` return type and rewrites it to plain `-> T`.
+
+       ```rust
+       use core::future::Future;
+
+       #[maybe_async::maybe_async(AFIT)]
+       pub trait PubTrait: Sync {
+           // Avoids the `async_fn_in_trait` warning on public traits.
+           fn declare(&self) -> impl Future<Output = ()> + Send + '_;
+
+           fn default_impl(&self) -> impl Future<Output = ()> + Send + '_ {
+               async move { self.declare().await }
+           }
+       }
+       ```
 
     For compatibility reasons, the `async fn` in traits is supported via a verbose `AFIT` flag. This will become
     the default mode for the next major release.

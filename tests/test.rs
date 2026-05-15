@@ -7,6 +7,7 @@ fn ui() {
     t.pass("tests/ui/04-unit-test-util.rs");
     t.pass("tests/ui/05-replace-future-generic-type-with-output.rs");
     t.pass("tests/ui/06-sync_impl_async_impl.rs");
+    t.pass("tests/ui/07-impl-future-rpit.rs");
 
     t.compile_fail("tests/ui/test_fail/01-empty-test.rs");
     t.compile_fail("tests/ui/test_fail/02-unknown-path.rs");

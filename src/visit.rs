@@ -2,8 +2,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
     visit_mut::{self, visit_item_mut, visit_path_segment_mut, VisitMut},
-    Expr, ExprBlock, File, GenericArgument, GenericParam, Item, PathArguments, PathSegment, Stmt,
-    Type, TypeParamBound, WherePredicate,
+    Expr, ExprBlock, File, GenericArgument, GenericParam, Item, PathArguments, PathSegment,
+    ReturnType, Signature, Stmt, Type, TypeParamBound, WherePredicate,
 };
 
 pub struct ReplaceGenericType<'a> {
@@ -96,6 +96,12 @@ impl AsyncAwaitRemoval {
 
 impl VisitMut for AsyncAwaitRemoval {
     fn visit_expr_mut(&mut self, node: &mut Expr) {
+        // Unwrap `Box::pin(async {..})` / `Box::new(async {..})` BEFORE recursing,
+        // so the inner async block remains visible to the Async match-arm below.
+        if let Some(unwrapped) = unwrap_box_call_with_async(node) {
+            *node = unwrapped;
+        }
+
         // Delegate to the default impl to visit nested expressions.
         visit_mut::visit_expr_mut(self, node);
 
@@ -118,6 +124,18 @@ impl VisitMut for AsyncAwaitRemoval {
             }
             _ => {}
         }
+    }
+
+    fn visit_signature_mut(&mut self, sig: &mut Signature) {
+        // rewrite `-> impl Future<Output = T> + ...`,
+        // `-> Box<dyn Future<Output = T> + ...>`,
+        // `-> Pin<Box<dyn Future<Output = T> + ...>>` to `-> T`
+        if let ReturnType::Type(arrow, ty) = &sig.output {
+            if let Some(inner) = extract_future_output(ty) {
+                sig.output = ReturnType::Type(*arrow, Box::new(inner));
+            }
+        }
+        visit_mut::visit_signature_mut(self, sig);
     }
 
     fn visit_item_mut(&mut self, i: &mut Item) {
@@ -160,6 +178,91 @@ impl VisitMut for AsyncAwaitRemoval {
         }
         visit_item_mut(self, i);
     }
+}
+
+/// Extract `T` from any of:
+/// - `impl Future<Output = T> + ...`
+/// - `Box<dyn Future<Output = T> + ...>`
+/// - `Pin<Box<dyn Future<Output = T> + ...>>`
+/// Paths are matched by last segment name only, so `std::pin::Pin`,
+/// `core::pin::Pin`, etc. all match.
+fn extract_future_output(ty: &Type) -> Option<Type> {
+    match ty {
+        Type::ImplTrait(impl_trait) => extract_future_output_from_bounds(impl_trait.bounds.iter()),
+        Type::TraitObject(trait_obj) => extract_future_output_from_bounds(trait_obj.bounds.iter()),
+        Type::Path(p) => {
+            let seg = p.path.segments.last()?;
+            let name = seg.ident.to_string();
+            let PathArguments::AngleBracketed(args) = &seg.arguments else {
+                return None;
+            };
+            match name.as_str() {
+                "Pin" | "Box" => args.args.iter().find_map(|arg| {
+                    if let GenericArgument::Type(inner) = arg {
+                        extract_future_output(inner)
+                    } else {
+                        None
+                    }
+                }),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
+fn extract_future_output_from_bounds<'a>(
+    bounds: impl Iterator<Item = &'a TypeParamBound>,
+) -> Option<Type> {
+    for bound in bounds {
+        let TypeParamBound::Trait(trait_bound) = bound else {
+            continue;
+        };
+        let Some(seg) = trait_bound.path.segments.last() else {
+            continue;
+        };
+        if seg.ident.to_string() != "Future" {
+            continue;
+        }
+        let PathArguments::AngleBracketed(args) = &seg.arguments else {
+            continue;
+        };
+        for arg in &args.args {
+            if let GenericArgument::AssocType(assoc) = arg {
+                if assoc.ident.to_string() == "Output" {
+                    return Some(assoc.ty.clone());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// If `node` is `Box::pin(<async block>)` or `Box::new(<async block>)`,
+/// return the async block. Path is matched on the last two segments being
+/// `Box` then `pin`/`new`, so qualified paths like `::std::boxed::Box::pin`
+/// also match.
+fn unwrap_box_call_with_async(node: &Expr) -> Option<Expr> {
+    let Expr::Call(call) = node else { return None };
+    let Expr::Path(path_expr) = call.func.as_ref() else {
+        return None;
+    };
+    let segs = &path_expr.path.segments;
+    if segs.len() < 2 {
+        return None;
+    }
+    let last = segs[segs.len() - 1].ident.to_string();
+    let second_last = segs[segs.len() - 2].ident.to_string();
+    if second_last != "Box" || (last != "pin" && last != "new") {
+        return None;
+    }
+    if call.args.len() != 1 {
+        return None;
+    }
+    if !matches!(&call.args[0], Expr::Async(_)) {
+        return None;
+    }
+    Some(call.args[0].clone())
 }
 
 fn search_trait_bound(
