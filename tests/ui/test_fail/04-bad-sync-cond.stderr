@@ -1,5 +1,5 @@
 error[E0537]: invalid predicate `unknown`
- --> tests/ui/test_fail/04-bad-sync-cond.rs:9:21
+ --> tests/ui/test_fail/04-bad-sync-cond.rs:2:21
   |
-9 | #[maybe_async::test(unknown(feature="async", async_std::test))]
+2 | #[maybe_async::test(unknown(feature="async", async_std::test))]
   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
