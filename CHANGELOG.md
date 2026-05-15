@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.11](https://github.com/fMeow/maybe-async-rs/compare/v0.2.10...v0.2.11) (2026-05-15)
+
+
+### Features
+
+* **AFIT:** rewrite `impl Future` / `Pin<Box<dyn Future>>` return types in sync mode ([07d5a96](https://github.com/fMeow/maybe-async-rs/commit/07d5a965dcdce80f4d29fdea1342b7888fc27370))
+
 ### [0.2.10](https://github.com/fMeow/maybe-async-rs/compare/v0.2.9...v0.2.10) (2024-02-22)
 
 ### [0.2.9](https://github.com/fMeow/maybe-async-rs/compare/v0.2.8...v0.2.9) (2024-01-31)
