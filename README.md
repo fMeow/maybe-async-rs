@@ -17,6 +17,8 @@ macro**.
 those `async` and `await` when you need a blocking code.
 - Switch between sync and async by toggling `is_sync` feature gate in
   `Cargo.toml`.
+- Alternatively activating the `default_sync` feature will switch to sync by
+  default and can be switched to async via `is_async`.
 - use `must_be_async` and `must_be_sync` to keep code in specified version
 - use `async_impl` and `sync_impl` to only compile code block on specified
   version
